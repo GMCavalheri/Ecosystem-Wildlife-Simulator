@@ -1,0 +1,32 @@
+# Build output
+build/
+out/
+cmake-build-*/
+
+# vcpkg
+vcpkg_installed/
+vcpkg/
+
+# IDE / tooling
+.vs/
+.vscode/
+*.user
+CMakeUserPresets.json
+compile_commands.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled objects / binaries
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdb
+
+# Simulation output (Phase 1 CSV logs, etc.)
+*.csv
+!tools/*.csv

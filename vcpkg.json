@@ -1,0 +1,26 @@
+{
+  "name": "ecosystem-wildlife-simulator",
+  "version": "0.1.0",
+  "dependencies": [
+    "entt",
+    "spdlog",
+    "catch2"
+  ],
+  "features": {
+    "render": {
+      "description": "Optional top-down grid renderer and live debug UI (Phase 6)",
+      "dependencies": [
+        "raylib",
+        "imgui",
+        "implot",
+        "glm"
+      ]
+    },
+    "persistence": {
+      "description": "Save/load and JSON-driven config for species and world parameters (Phase 8)",
+      "dependencies": [
+        "nlohmann-json"
+      ]
+    }
+  }
+}
