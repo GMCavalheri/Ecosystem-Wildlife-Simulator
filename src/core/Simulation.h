@@ -1,7 +1,12 @@
 #pragma once
 
+#include <cstddef>
+#include <random>
+
 #include <entt/entt.hpp>
 
+#include "components/Components.h"
+#include "core/EcosystemParams.h"
 #include "core/MetricsRecorder.h"
 #include "environment/Grid.h"
 #include "systems/DiseaseSystem.h"
@@ -18,9 +23,14 @@ namespace eco {
 // Headless by design — rendering is an optional layer built on top of this.
 class Simulation {
 public:
-    Simulation(int gridWidth, int gridHeight);
+    Simulation(int gridWidth, int gridHeight, LotkaVolterraParams lvParams = {},
+               unsigned rngSeed = 1234u);
 
     void tick(float dt);
+
+    // Phase 1: creates `count` bare entities of the given species (Species component
+    // only) for the non-spatial Lotka-Volterra validation.
+    void seedPopulation(SpeciesId species, std::size_t count);
 
     entt::registry& registry() { return registry_; }
     const entt::registry& registry() const { return registry_; }
@@ -30,10 +40,15 @@ public:
 
     float simulationTime() const { return simulationTime_; }
 
+    MetricsRecorder& metrics() { return metricsRecorder_; }
+    const MetricsRecorder& metrics() const { return metricsRecorder_; }
+
 private:
     entt::registry registry_;
     Grid grid_;
     float simulationTime_ = 0.0f;
+    std::mt19937 rng_;
+    LotkaVolterraParams lvParams_;
 
     EnvironmentSystem environmentSystem_;
     ForagingSystem foragingSystem_;

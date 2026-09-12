@@ -6,6 +6,10 @@ namespace eco {
 
 using SpeciesId = std::uint32_t;
 
+// Phase 1: the two species in the mean-field Lotka-Volterra validation.
+inline constexpr SpeciesId kPreySpeciesId = 0;
+inline constexpr SpeciesId kPredatorSpeciesId = 1;
+
 struct Position {
     int cellX = 0;
     int cellY = 0;
