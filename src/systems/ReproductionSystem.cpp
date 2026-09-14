@@ -1,37 +1,42 @@
 #include "systems/ReproductionSystem.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "components/Components.h"
 
 namespace eco {
 
 void ReproductionSystem::update(entt::registry& registry, std::mt19937& rng, float dt,
-                                 const LotkaVolterraParams& params) {
-    std::size_t preyCount = 0;
-    auto view = registry.view<Species>();
+                                 const ReproductionParams& params) {
+    std::vector<entt::entity> eligible;
+    auto view = registry.view<Species, Energy>();
     for (auto entity : view) {
-        if (view.get<Species>(entity).id == kPreySpeciesId) {
-            ++preyCount;
+        if (view.get<Species>(entity).id == kPreySpeciesId &&
+            view.get<Energy>(entity).value >= params.energyThreshold) {
+            eligible.push_back(entity);
         }
     }
 
-    if (preyCount == 0) {
-        return;
-    }
+    std::bernoulli_distribution attempt(
+        std::clamp(static_cast<double>(params.attemptRate) * dt, 0.0, 1.0));
 
-    const double expectedBirths =
-        static_cast<double>(params.preyBirthRate) * static_cast<double>(preyCount) *
-        static_cast<double>(dt);
-    std::poisson_distribution<int> birthDist(expectedBirths);
-    int births = birthDist(rng);
-    if (preyCount + static_cast<std::size_t>(births) > kMaxSpeciesPopulation) {
-        births = static_cast<int>(kMaxSpeciesPopulation - std::min(preyCount, kMaxSpeciesPopulation));
-    }
+    for (auto entity : eligible) {
+        if (!attempt(rng)) {
+            continue;
+        }
 
-    for (int i = 0; i < births; ++i) {
-        auto entity = registry.create();
-        registry.emplace<Species>(entity, kPreySpeciesId);
+        auto& parentEnergy = registry.get<Energy>(entity);
+        if (parentEnergy.value < params.parentEnergyCost) {
+            continue;
+        }
+        parentEnergy.value -= params.parentEnergyCost;
+
+        const auto parentPosition = registry.get<Position>(entity);
+        auto offspring = registry.create();
+        registry.emplace<Species>(offspring, kPreySpeciesId);
+        registry.emplace<Position>(offspring, parentPosition);
+        registry.emplace<Energy>(offspring, params.offspringEnergy, 100.0f);
     }
 }
 

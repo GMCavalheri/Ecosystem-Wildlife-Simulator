@@ -9,6 +9,21 @@ namespace eco {
 
 void MortalitySystem::update(entt::registry& registry, std::mt19937& rng, float dt,
                               const LotkaVolterraParams& params) {
+    // Prey: starvation death once Energy is depleted (Phase 2's carrying-capacity
+    // mechanism -- no vegetation locally means no energy means no survival).
+    std::vector<entt::entity> starved;
+    auto energyView = registry.view<Species, Energy>();
+    for (auto entity : energyView) {
+        if (energyView.get<Species>(entity).id == kPreySpeciesId &&
+            energyView.get<Energy>(entity).value <= 0.0f) {
+            starved.push_back(entity);
+        }
+    }
+    for (auto entity : starved) {
+        registry.destroy(entity);
+    }
+
+    // Predators: background natural death (the d*Predator term; still mean-field).
     std::vector<entt::entity> predators;
     auto view = registry.view<Species>();
     for (auto entity : view) {

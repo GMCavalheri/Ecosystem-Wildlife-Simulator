@@ -4,21 +4,60 @@
 
 namespace eco {
 
-// Phase 1: parameters for the mean-field (non-spatial) Lotka-Volterra predator/prey
-// model used to validate core population dynamics before terrain, energy, and
-// genetics are layered on. Fixed points: prey* = d / (b * c), predator* = a / b.
+// Phase 1: parameters for the still-mean-field predator side of the model (spatial
+// predation arrives in a later phase). As of Phase 2, prey are no longer driven by an
+// abstract birth rate `a` -- see ReproductionParams -- so this now covers only
+// predation and predator mortality.
 struct LotkaVolterraParams {
-    float preyBirthRate = 1.0f;         // a: prey births per prey per unit time
     float predationRate = 0.005f;       // b: predation events per prey-predator pair per unit time
     float conversionEfficiency = 0.5f;  // c: predator births per successful predation
     float predatorDeathRate = 0.8f;     // d: predator deaths per predator per unit time
 };
 
-// Safety valve, not a modeling feature: the classic (no carrying-capacity) LV system
-// is only neutrally stable, so demographic noise can occasionally drive predators
-// extinct, after which prey growth is unopposed and would otherwise grow without
+// Safety valve, not a modeling feature: demographic noise can occasionally drive
+// predators extinct (see Phase 1 notes), which historically let prey grow without
 // bound. This caps per-tick births once a population gets absurdly large, so a rare
 // bad draw degrades into flat growth instead of exhausting entt's entity storage.
 inline constexpr std::size_t kMaxSpeciesPopulation = 20000;
+
+// Starting Energy for prey seeded at simulation setup.
+inline constexpr float kInitialPreyEnergy = 50.0f;
+
+// Phase 2: per-cell vegetation regrowth. Logistic growth dV/dt = r(T)*V*(1-V), where
+// the rate r(T) is scaled down by a Gaussian "suitability" curve around
+// optimalTemperature -- vegetation grows fastest near the ideal temperature and
+// stalls in a too-hot or too-cold season. Temperature itself cycles sinusoidally
+// with simulated time to represent seasons.
+struct VegetationParams {
+    float regrowthRate = 0.4f;          // r: logistic growth rate at optimal temperature
+    float baseTemperature = 20.0f;      // mean annual temperature
+    float seasonalAmplitude = 10.0f;    // +/- swing around the mean over one year
+    float seasonalPeriod = 40.0f;       // simulated time units per full seasonal cycle
+    float optimalTemperature = 20.0f;   // temperature at which regrowth is fastest
+    float temperatureTolerance = 15.0f; // sigma of the suitability Gaussian
+};
+
+// Phase 2: herbivores eat vegetation from their own cell, convert it into Energy, and
+// pay a constant metabolic cost just for staying alive. This is the real,
+// space-limited carrying-capacity mechanism that Phase 1 lacked.
+// A logistic patch's maximum *sustainable* yield is r/4 (harvested exactly at
+// V=0.5, the peak of r*V*(1-V)) -- demand above that permanently drains the patch
+// no matter how much slack it had. maxIntakeRate is deliberately kept just above
+// that ceiling: a hungry prey can draw down a fresh patch quickly, but a fed one
+// (throttled by energyRoom below) settles into a sustainable trickle.
+struct ForagingParams {
+    float maxIntakeRate = 0.12f;        // max vegetation units a prey can eat per unit time
+    float energyPerVegetation = 400.0f; // energy gained per unit of vegetation eaten
+    float metabolicRate = 10.0f;        // energy spent per unit time just staying alive
+};
+
+// Phase 2: prey reproduce once Energy crosses a threshold, at a constant probability
+// rate per unit time, paying an energy cost to spawn an offspring at their own cell.
+struct ReproductionParams {
+    float energyThreshold = 70.0f;   // minimum Energy to be reproduction-eligible
+    float attemptRate = 0.3f;        // probability rate per unit time once eligible
+    float offspringEnergy = 40.0f;   // starting Energy given to the newborn
+    float parentEnergyCost = 55.0f;  // Energy deducted from the parent per birth
+};
 
 } // namespace eco

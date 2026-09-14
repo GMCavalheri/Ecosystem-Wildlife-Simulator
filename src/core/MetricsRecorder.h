@@ -8,21 +8,25 @@
 
 namespace eco {
 
-// Records per-tick population counts for offline validation, e.g. confirming
-// Lotka-Volterra-style oscillation in Phase 1.
+class Grid;
+
+// Records per-tick population/environment stats for offline validation, e.g.
+// confirming Lotka-Volterra-style oscillation (Phase 1) or vegetation carrying
+// capacity (Phase 2).
 class MetricsRecorder {
 public:
     struct Snapshot {
         float time = 0.0f;
         std::size_t preyCount = 0;
         std::size_t predatorCount = 0;
+        float avgVegetation = 0.0f;
     };
 
-    void snapshot(const entt::registry& registry, float time);
+    void snapshot(const entt::registry& registry, const Grid& grid, float time);
 
     const std::vector<Snapshot>& history() const { return history_; }
 
-    // Writes time,prey,predator rows for external plotting/validation tools.
+    // Writes time,prey,predator,avg_vegetation rows for external plotting/validation.
     void writeCsv(const std::string& path) const;
 
 private:
