@@ -11,15 +11,21 @@ void MetricsRecorder::snapshot(const entt::registry& registry, const Grid& grid,
     Snapshot snap;
     snap.time = time;
 
+    double speedTotal = 0.0;
     auto view = registry.view<const Species>();
     for (auto entity : view) {
         const auto id = view.get<const Species>(entity).id;
         if (id == kPreySpeciesId) {
             ++snap.preyCount;
+            if (const auto* traits = registry.try_get<const GeneticTraits>(entity)) {
+                speedTotal += traits->speed;
+            }
         } else if (id == kPredatorSpeciesId) {
             ++snap.predatorCount;
         }
     }
+    snap.avgPreySpeed =
+        snap.preyCount > 0 ? static_cast<float>(speedTotal / snap.preyCount) : 0.0f;
 
     double vegetationTotal = 0.0;
     const int cellCount = grid.width() * grid.height();
@@ -35,10 +41,10 @@ void MetricsRecorder::snapshot(const entt::registry& registry, const Grid& grid,
 
 void MetricsRecorder::writeCsv(const std::string& path) const {
     std::ofstream out(path);
-    out << "time,prey,predator,avg_vegetation\n";
+    out << "time,prey,predator,avg_vegetation,avg_prey_speed\n";
     for (const auto& snap : history_) {
         out << snap.time << ',' << snap.preyCount << ',' << snap.predatorCount << ','
-            << snap.avgVegetation << '\n';
+            << snap.avgVegetation << ',' << snap.avgPreySpeed << '\n';
     }
 }
 

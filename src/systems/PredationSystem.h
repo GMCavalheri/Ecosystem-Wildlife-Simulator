@@ -8,10 +8,11 @@
 
 namespace eco {
 
-// Phase 1: mean-field predator/prey interaction (no spatial grid yet). Kill count and
-// resulting predator offspring are tau-leaped stochastic events approximating the
-// Lotka-Volterra b*Prey*Predator and c*b*Prey*Predator terms. Spatial kill probability
-// (predator hunger, prey density, relative GeneticTraits.speed) arrives in Phase 2+.
+// Kill count and resulting predator offspring are tau-leaped stochastic events
+// approximating the Lotka-Volterra b*Prey*Predator and c*b*Prey*Predator terms
+// (predation itself is still mean-field, not spatial). Phase 3: *which* prey get
+// killed is no longer uniform -- catchability scales as 1/speed, so
+// GeneticTraits.speed is a real, measurable selection pressure.
 class PredationSystem {
 public:
     void update(entt::registry& registry, std::mt19937& rng, float dt,

@@ -5,6 +5,7 @@ add_executable(ecosystem_tests
     test_simulation.cpp
     test_vegetation.cpp
     test_population_dynamics.cpp
+    test_genetics.cpp
 )
 
 target_link_libraries(ecosystem_tests PRIVATE ecosystem_core Catch2::Catch2WithMain)

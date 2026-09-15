@@ -60,4 +60,17 @@ struct ReproductionParams {
     float parentEnergyCost = 55.0f;  // Energy deducted from the parent per birth
 };
 
+// Phase 3: offspring GeneticTraits are the parent's plus independent Gaussian
+// mutation, clamped to a sane positive range. Founders (seedPopulation) start
+// homogeneous at 1.0 for every trait -- all variance seen later comes purely from
+// mutation, so any trend in the population mean is a real, measurable response to
+// selection pressure, not an artifact of the starting distribution.
+struct GeneticsParams {
+    float speedMutationStdDev = 0.05f;
+    float sizeMutationStdDev = 0.05f;
+    float fertilityMutationStdDev = 0.05f;
+    float minTraitValue = 0.1f;
+    float maxTraitValue = 3.0f;
+};
+
 } // namespace eco

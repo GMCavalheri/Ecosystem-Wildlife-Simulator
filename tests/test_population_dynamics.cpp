@@ -17,7 +17,7 @@
 TEST_CASE("Prey population grows and oscillates under vegetation/predation limits",
           "[population-dynamics]") {
     eco::LotkaVolterraParams lvParams; // b=0.005, c=0.5, d=0.8 (mean-field predation)
-    eco::Simulation sim(64, 64, lvParams, {}, {}, {}, /*rngSeed=*/1234u);
+    eco::Simulation sim(64, 64, lvParams, {}, {}, {}, {}, /*rngSeed=*/1234u);
 
     sim.seedPopulation(eco::kPreySpeciesId, 280);
     sim.seedPopulation(eco::kPredatorSpeciesId, 10);

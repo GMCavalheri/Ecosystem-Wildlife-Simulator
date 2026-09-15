@@ -25,13 +25,15 @@ class Simulation {
 public:
     Simulation(int gridWidth, int gridHeight, LotkaVolterraParams lvParams = {},
                VegetationParams vegParams = {}, ForagingParams foragingParams = {},
-               ReproductionParams reproParams = {}, unsigned rngSeed = 1234u);
+               ReproductionParams reproParams = {}, GeneticsParams geneticsParams = {},
+               unsigned rngSeed = 1234u);
 
     void tick(float dt);
 
     // Creates `count` entities of the given species. Prey additionally get a random
-    // Position on the grid and starting Energy (Phase 2); predators remain the bare,
-    // mean-field entities from Phase 1.
+    // Position on the grid, starting Energy (Phase 2), and homogeneous starting
+    // GeneticTraits (Phase 3 -- variance emerges only from mutation); predators remain
+    // the bare, mean-field entities from Phase 1.
     void seedPopulation(SpeciesId species, std::size_t count);
 
     entt::registry& registry() { return registry_; }
@@ -54,6 +56,7 @@ private:
     VegetationParams vegParams_;
     ForagingParams foragingParams_;
     ReproductionParams reproParams_;
+    GeneticsParams geneticsParams_;
 
     EnvironmentSystem environmentSystem_;
     ForagingSystem foragingSystem_;
