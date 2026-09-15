@@ -26,7 +26,7 @@ public:
     Simulation(int gridWidth, int gridHeight, LotkaVolterraParams lvParams = {},
                VegetationParams vegParams = {}, ForagingParams foragingParams = {},
                ReproductionParams reproParams = {}, GeneticsParams geneticsParams = {},
-               unsigned rngSeed = 1234u);
+               MigrationParams migrationParams = {}, unsigned rngSeed = 1234u);
 
     void tick(float dt);
 
@@ -57,6 +57,7 @@ private:
     ForagingParams foragingParams_;
     ReproductionParams reproParams_;
     GeneticsParams geneticsParams_;
+    MigrationParams migrationParams_;
 
     EnvironmentSystem environmentSystem_;
     ForagingSystem foragingSystem_;

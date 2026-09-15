@@ -73,4 +73,13 @@ struct GeneticsParams {
     float maxTraitValue = 3.0f;
 };
 
+// Phase 5: simple greedy gradient-following, not pathfinding. Each tick, an eligible
+// prey looks at its 8 neighboring cells (Moore neighborhood) and moves to the best one
+// if it beats its current cell's vegetation by more than minVegetationAdvantage --
+// otherwise it stays put, so a flat gradient doesn't cause constant jitter.
+struct MigrationParams {
+    float moveAttemptRate = 2.0f;         // move attempts per unit time
+    float minVegetationAdvantage = 0.05f; // required edge over the current cell to bother moving
+};
+
 } // namespace eco

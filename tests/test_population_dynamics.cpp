@@ -3,27 +3,29 @@
 #include "components/Components.h"
 #include "core/Simulation.h"
 
-// Phase 2 correctness gate: prey now grow, forage, and reproduce driven entirely by
-// local vegetation/Energy (see test_vegetation.cpp for the underlying logistic-curve
-// math), with predation still mean-field on top. This checks the *integrated* system
-// produces bounded population growth -- a real overshoot-and-response, not an instant
-// collapse or an unbounded explosion.
+// Phase 2/3 correctness gate, updated for Phase 5: prey grow, forage, and reproduce
+// driven by local vegetation/Energy, with mean-field predation and speed-selection on
+// top. This checks the *integrated* system produces healthy, bounded-in-this-window
+// population growth -- not an instant collapse.
 //
-// Note: with no migration yet (that's Phase 5), reproduction without dispersal means
-// prey lineages cluster and exhaust their own patch. Verified empirically across many
-// seeds: population reliably overshoots then eventually collapses to extinction by
-// ~35-50 simulated time units, even after predators die out first. This test window
-// is chosen well within the healthy, bounded-growth part of that arc.
+// Historical note: before migration existed, this same scenario reliably collapsed to
+// near-extinction within this window (prey stuck on a depleted patch with nowhere to
+// go -- see test_migration.cpp for the direct before/after comparison). With
+// migration, prey can walk to fresher cells, so the population not only survives this
+// window but grows far past the old ~1000-prey ceiling. That doesn't mean migration
+// makes growth unconditionally safe forever -- see main.cpp's longer demo run for the
+// eventual grid-wide "tragedy of the commons" collapse once predators are gone and
+// prey can roam (and so overgraze) the entire grid at once.
 TEST_CASE("Prey population grows and oscillates under vegetation/predation limits",
           "[population-dynamics]") {
     eco::LotkaVolterraParams lvParams; // b=0.005, c=0.5, d=0.8 (mean-field predation)
-    eco::Simulation sim(64, 64, lvParams, {}, {}, {}, {}, /*rngSeed=*/1234u);
+    eco::Simulation sim(64, 64, lvParams, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
 
     sim.seedPopulation(eco::kPreySpeciesId, 280);
     sim.seedPopulation(eco::kPredatorSpeciesId, 10);
 
     constexpr float dt = 1.0f / 30.0f;
-    constexpr int ticks = 600; // ~20 simulated time units, well before eventual collapse
+    constexpr int ticks = 600; // ~20 simulated time units
 
     for (int i = 0; i < ticks; ++i) {
         sim.tick(dt);
@@ -40,8 +42,9 @@ TEST_CASE("Prey population grows and oscillates under vegetation/predation limit
         maxPred = std::max(maxPred, snap.predatorCount);
     }
 
-    // Prey never collapses within this window...
-    REQUIRE(minPrey > 50);
+    // Prey never collapses within this window -- migration keeps them well above the
+    // pre-migration floor of ~50...
+    REQUIRE(minPrey > 200);
 
     // ...grows well beyond its starting size (vegetation-fed reproduction working)...
     REQUIRE(maxPrey > 280 * 2);
@@ -49,6 +52,6 @@ TEST_CASE("Prey population grows and oscillates under vegetation/predation limit
     // ...predation actually happened at least once (mean-field term engaged)...
     REQUIRE(maxPred > 0);
 
-    // ...and growth stays bounded by the grid's carrying capacity, not runaway.
-    REQUIRE(maxPrey < 5000);
+    // ...and growth stays within entt's hard safety cap, not a numeric runaway bug.
+    REQUIRE(maxPrey < eco::kMaxSpeciesPopulation);
 }
