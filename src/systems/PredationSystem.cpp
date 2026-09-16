@@ -42,10 +42,10 @@ std::vector<entt::entity> weightedSampleWithoutReplacement(
 } // namespace
 
 void PredationSystem::update(entt::registry& registry, std::mt19937& rng, float dt,
-                              const LotkaVolterraParams& params) {
+                              const PredatorParams& params) {
     std::vector<entt::entity> prey;
     std::vector<double> catchability;
-    std::size_t predatorCount = 0;
+    std::vector<entt::entity> predators;
 
     auto view = registry.view<Species>();
     for (auto entity : view) {
@@ -54,37 +54,38 @@ void PredationSystem::update(entt::registry& registry, std::mt19937& rng, float 
             prey.push_back(entity);
             catchability.push_back(1.0 / std::max(speed, 1e-3f));
         } else if (view.get<Species>(entity).id == kPredatorSpeciesId) {
-            ++predatorCount;
+            predators.push_back(entity);
         }
     }
 
-    if (prey.empty() || predatorCount == 0) {
-        return;
+    if (!prey.empty() && !predators.empty()) {
+        const double expectedKills = static_cast<double>(params.predationRate) *
+                                      static_cast<double>(prey.size()) *
+                                      static_cast<double>(predators.size()) *
+                                      static_cast<double>(dt);
+        std::poisson_distribution<int> killDist(expectedKills);
+        const int kills = std::min<int>(killDist(rng), static_cast<int>(prey.size()));
+
+        const auto caught = weightedSampleWithoutReplacement(prey, catchability, kills, rng);
+        for (auto entity : caught) {
+            registry.destroy(entity);
+        }
+
+        // Each kill's biomass feeds one randomly-chosen living predator -- a lucky
+        // predator can land more than one kill in the same tick.
+        std::uniform_int_distribution<std::size_t> pickPredator(0, predators.size() - 1);
+        for (int i = 0; i < kills; ++i) {
+            auto& energy = registry.get<Energy>(predators[pickPredator(rng)]);
+            energy.value = std::min(energy.max, energy.value + params.energyPerKill);
+        }
     }
 
-    const double expectedKills =
-        static_cast<double>(params.predationRate) * static_cast<double>(prey.size()) *
-        static_cast<double>(predatorCount) * static_cast<double>(dt);
-    std::poisson_distribution<int> killDist(expectedKills);
-    const int kills = std::min<int>(killDist(rng), static_cast<int>(prey.size()));
-
-    const auto caught = weightedSampleWithoutReplacement(prey, catchability, kills, rng);
-    for (auto entity : caught) {
-        registry.destroy(entity);
-    }
-
-    if (kills > 0) {
-        std::poisson_distribution<int> birthDist(
-            static_cast<double>(params.conversionEfficiency) * kills);
-        int predatorBirths = birthDist(rng);
-        if (predatorCount + static_cast<std::size_t>(predatorBirths) > kMaxSpeciesPopulation) {
-            predatorBirths = static_cast<int>(
-                kMaxSpeciesPopulation - std::min(predatorCount, kMaxSpeciesPopulation));
-        }
-        for (int i = 0; i < predatorBirths; ++i) {
-            auto entity = registry.create();
-            registry.emplace<Species>(entity, kPredatorSpeciesId);
-        }
+    // Metabolism applies every tick regardless of hunting success -- this is what
+    // lets a predator coast through a lean patch instead of depending on that exact
+    // tick's kill count.
+    for (auto entity : predators) {
+        auto& energy = registry.get<Energy>(entity);
+        energy.value = std::max(0.0f, energy.value - params.metabolicRate * dt);
     }
 }
 

@@ -23,17 +23,17 @@ namespace eco {
 // Headless by design — rendering is an optional layer built on top of this.
 class Simulation {
 public:
-    Simulation(int gridWidth, int gridHeight, LotkaVolterraParams lvParams = {},
+    Simulation(int gridWidth, int gridHeight, PredatorParams predatorParams = {},
                VegetationParams vegParams = {}, ForagingParams foragingParams = {},
                ReproductionParams reproParams = {}, GeneticsParams geneticsParams = {},
                MigrationParams migrationParams = {}, unsigned rngSeed = 1234u);
 
     void tick(float dt);
 
-    // Creates `count` entities of the given species. Prey additionally get a random
-    // Position on the grid, starting Energy (Phase 2), and homogeneous starting
-    // GeneticTraits (Phase 3 -- variance emerges only from mutation); predators remain
-    // the bare, mean-field entities from Phase 1.
+    // Creates `count` entities of the given species. Prey get a random Position on the
+    // grid, starting Energy (Phase 2), and homogeneous starting GeneticTraits (Phase 3
+    // -- variance emerges only from mutation). Predators get starting Energy too (the
+    // resilience fix) but remain non-spatial/mean-field for now.
     void seedPopulation(SpeciesId species, std::size_t count);
 
     entt::registry& registry() { return registry_; }
@@ -52,7 +52,7 @@ private:
     Grid grid_;
     float simulationTime_ = 0.0f;
     std::mt19937 rng_;
-    LotkaVolterraParams lvParams_;
+    PredatorParams predatorParams_;
     VegetationParams vegParams_;
     ForagingParams foragingParams_;
     ReproductionParams reproParams_;

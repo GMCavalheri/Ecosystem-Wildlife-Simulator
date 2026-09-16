@@ -18,8 +18,8 @@
 // prey can roam (and so overgraze) the entire grid at once.
 TEST_CASE("Prey population grows and oscillates under vegetation/predation limits",
           "[population-dynamics]") {
-    eco::LotkaVolterraParams lvParams; // b=0.005, c=0.5, d=0.8 (mean-field predation)
-    eco::Simulation sim(64, 64, lvParams, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
+    eco::PredatorParams predatorParams; // b=0.002 (mean-field predation)
+    eco::Simulation sim(64, 64, predatorParams, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
 
     sim.seedPopulation(eco::kPreySpeciesId, 280);
     sim.seedPopulation(eco::kPredatorSpeciesId, 10);

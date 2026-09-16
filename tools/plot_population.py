@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Plot population history CSV from ecosystem_sim: time,prey,predator,
-avg_vegetation,avg_prey_speed.
+avg_vegetation,avg_prey_speed,avg_predator_energy.
 
 Usage: python3 tools/plot_population.py [population_history.csv] [output.png]
 """
@@ -13,12 +13,13 @@ def main() -> None:
     csv_path = sys.argv[1] if len(sys.argv) > 1 else "population_history.csv"
     out_path = sys.argv[2] if len(sys.argv) > 2 else "population_history.png"
 
-    time, prey, predator, vegetation, speed = [], [], [], [], []
+    time, prey, predator, vegetation, speed, predator_energy = [], [], [], [], [], []
     with open(csv_path, newline="") as f:
         reader = csv.DictReader(f)
         fields = reader.fieldnames or []
         has_vegetation = "avg_vegetation" in fields
         has_speed = "avg_prey_speed" in fields
+        has_predator_energy = "avg_predator_energy" in fields
         for row in reader:
             time.append(float(row["time"]))
             prey.append(int(row["prey"]))
@@ -27,10 +28,17 @@ def main() -> None:
                 vegetation.append(float(row["avg_vegetation"]))
             if has_speed:
                 speed.append(float(row["avg_prey_speed"]))
+            if has_predator_energy:
+                predator_energy.append(float(row["avg_predator_energy"]))
 
     import matplotlib.pyplot as plt
 
-    ncols = 2 + (1 if vegetation else 0) + (1 if speed else 0)
+    ncols = (
+        2
+        + (1 if vegetation else 0)
+        + (1 if speed else 0)
+        + (1 if predator_energy else 0)
+    )
     fig, axes = plt.subplots(1, ncols, figsize=(6 * ncols, 5))
     ax_time, ax_phase = axes[0], axes[1]
     next_axis = 2
@@ -65,6 +73,15 @@ def main() -> None:
         ax_speed.set_ylabel("Mean prey speed")
         ax_speed.set_title("Trait drift vs. time")
         ax_speed.legend()
+
+    if predator_energy:
+        ax_energy = axes[next_axis]
+        next_axis += 1
+        ax_energy.plot(time, predator_energy, color="tab:brown")
+        ax_energy.set_xlabel("Simulated time")
+        ax_energy.set_ylabel("Mean predator Energy")
+        ax_energy.set_title("Predator Energy reserve vs. time")
+        ax_energy.set_ylim(0, 105)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)

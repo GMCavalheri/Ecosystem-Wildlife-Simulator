@@ -12,6 +12,7 @@ void MetricsRecorder::snapshot(const entt::registry& registry, const Grid& grid,
     snap.time = time;
 
     double speedTotal = 0.0;
+    double predatorEnergyTotal = 0.0;
     auto view = registry.view<const Species>();
     for (auto entity : view) {
         const auto id = view.get<const Species>(entity).id;
@@ -22,10 +23,15 @@ void MetricsRecorder::snapshot(const entt::registry& registry, const Grid& grid,
             }
         } else if (id == kPredatorSpeciesId) {
             ++snap.predatorCount;
+            if (const auto* energy = registry.try_get<const Energy>(entity)) {
+                predatorEnergyTotal += energy->value;
+            }
         }
     }
     snap.avgPreySpeed =
         snap.preyCount > 0 ? static_cast<float>(speedTotal / snap.preyCount) : 0.0f;
+    snap.avgPredatorEnergy =
+        snap.predatorCount > 0 ? static_cast<float>(predatorEnergyTotal / snap.predatorCount) : 0.0f;
 
     double vegetationTotal = 0.0;
     const int cellCount = grid.width() * grid.height();
@@ -41,10 +47,11 @@ void MetricsRecorder::snapshot(const entt::registry& registry, const Grid& grid,
 
 void MetricsRecorder::writeCsv(const std::string& path) const {
     std::ofstream out(path);
-    out << "time,prey,predator,avg_vegetation,avg_prey_speed\n";
+    out << "time,prey,predator,avg_vegetation,avg_prey_speed,avg_predator_energy\n";
     for (const auto& snap : history_) {
         out << snap.time << ',' << snap.preyCount << ',' << snap.predatorCount << ','
-            << snap.avgVegetation << ',' << snap.avgPreySpeed << '\n';
+            << snap.avgVegetation << ',' << snap.avgPreySpeed << ',' << snap.avgPredatorEnergy
+            << '\n';
     }
 }
 

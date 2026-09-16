@@ -8,15 +8,16 @@
 
 namespace eco {
 
-// Kill count and resulting predator offspring are tau-leaped stochastic events
-// approximating the Lotka-Volterra b*Prey*Predator and c*b*Prey*Predator terms
-// (predation itself is still mean-field, not spatial). Phase 3: *which* prey get
-// killed is no longer uniform -- catchability scales as 1/speed, so
-// GeneticTraits.speed is a real, measurable selection pressure.
+// Kill count is still a tau-leaped stochastic event approximating the Lotka-Volterra
+// b*Prey*Predator term (predation itself is mean-field, not spatial). Phase 3: *which*
+// prey get killed is not uniform -- catchability scales as 1/speed. Predator
+// resilience fix: a kill's energy now feeds one existing predator (who reproduces
+// individually via ReproductionSystem once fed enough) instead of instantly spawning a
+// new predator population-wide.
 class PredationSystem {
 public:
     void update(entt::registry& registry, std::mt19937& rng, float dt,
-                const LotkaVolterraParams& params);
+                const PredatorParams& params);
 };
 
 } // namespace eco

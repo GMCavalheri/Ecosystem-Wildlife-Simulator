@@ -16,8 +16,8 @@
 // Gaussian noise has no reason to push it either way).
 TEST_CASE("Predation pressure raises mean prey speed above the founder baseline",
           "[genetics]") {
-    eco::LotkaVolterraParams lvParams; // b=0.005 -- predation pressure active
-    eco::Simulation sim(64, 64, lvParams, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
+    eco::PredatorParams predatorParams; // b=0.005 -- predation pressure active
+    eco::Simulation sim(64, 64, predatorParams, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
 
     sim.seedPopulation(eco::kPreySpeciesId, 280);
     sim.seedPopulation(eco::kPredatorSpeciesId, 30);
@@ -37,9 +37,9 @@ TEST_CASE("Predation pressure raises mean prey speed above the founder baseline"
 
 TEST_CASE("Without predation, mutation alone does not bias mean prey speed",
           "[genetics]") {
-    eco::LotkaVolterraParams lvParams;
-    lvParams.predationRate = 0.0f; // no selection pressure -- neutral drift only
-    eco::Simulation sim(64, 64, lvParams, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
+    eco::PredatorParams predatorParams;
+    predatorParams.predationRate = 0.0f; // no selection pressure -- neutral drift only
+    eco::Simulation sim(64, 64, predatorParams, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
 
     sim.seedPopulation(eco::kPreySpeciesId, 280);
     sim.seedPopulation(eco::kPredatorSpeciesId, 30);

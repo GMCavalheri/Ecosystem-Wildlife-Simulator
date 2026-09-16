@@ -2,13 +2,13 @@
 
 namespace eco {
 
-Simulation::Simulation(int gridWidth, int gridHeight, LotkaVolterraParams lvParams,
+Simulation::Simulation(int gridWidth, int gridHeight, PredatorParams predatorParams,
                         VegetationParams vegParams, ForagingParams foragingParams,
                         ReproductionParams reproParams, GeneticsParams geneticsParams,
                         MigrationParams migrationParams, unsigned rngSeed)
     : grid_(gridWidth, gridHeight),
       rng_(rngSeed),
-      lvParams_(lvParams),
+      predatorParams_(predatorParams),
       vegParams_(vegParams),
       foragingParams_(foragingParams),
       reproParams_(reproParams),
@@ -27,6 +27,8 @@ void Simulation::seedPopulation(SpeciesId species, std::size_t count) {
             registry_.emplace<Position>(entity, xDist(rng_), yDist(rng_));
             registry_.emplace<Energy>(entity, kInitialPreyEnergy, 100.0f);
             registry_.emplace<GeneticTraits>(entity, 1.0f, 1.0f, 1.0f);
+        } else if (species == kPredatorSpeciesId) {
+            registry_.emplace<Energy>(entity, kInitialPredatorEnergy, 100.0f);
         }
     }
 }
@@ -34,11 +36,11 @@ void Simulation::seedPopulation(SpeciesId species, std::size_t count) {
 void Simulation::tick(float dt) {
     environmentSystem_.update(grid_, dt, simulationTime_, vegParams_);
     foragingSystem_.update(registry_, grid_, dt, foragingParams_);
-    predationSystem_.update(registry_, rng_, dt, lvParams_);
-    reproductionSystem_.update(registry_, rng_, dt, reproParams_, geneticsParams_);
+    predationSystem_.update(registry_, rng_, dt, predatorParams_);
+    reproductionSystem_.update(registry_, rng_, dt, reproParams_, geneticsParams_, predatorParams_);
     diseaseSystem_.update(registry_, grid_);
     migrationSystem_.update(registry_, grid_, rng_, dt, migrationParams_);
-    mortalitySystem_.update(registry_, rng_, dt, lvParams_);
+    mortalitySystem_.update(registry_);
 
     simulationTime_ += dt;
     metricsRecorder_.snapshot(registry_, grid_, simulationTime_);

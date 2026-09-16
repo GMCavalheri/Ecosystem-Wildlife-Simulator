@@ -4,16 +4,19 @@
 #include "core/Simulation.h"
 
 int main() {
-    spdlog::info("Ecosystem/Wildlife Simulator -- Phase 5: migration validation");
+    spdlog::info("Ecosystem/Wildlife Simulator -- predator resilience validation");
 
     eco::Simulation sim(64, 64);
     sim.seedPopulation(eco::kPreySpeciesId, 280);
-    sim.seedPopulation(eco::kPredatorSpeciesId, 30);
+    sim.seedPopulation(eco::kPredatorSpeciesId, 10);
 
     constexpr float dt = 1.0f / 30.0f;
-    constexpr int ticks = 2700; // ~90 simulated time units: full arc, including the
-                                // eventual grid-wide collapse once predators are gone
-                                // and mobile prey can (and do) overgraze everywhere.
+    constexpr int ticks = 1800; // ~60 simulated time units: predators now grow to a
+                                // healthy peak (~490) and sustain for 30+ time units,
+                                // instead of the old near-instant collapse -- they
+                                // still eventually decline here, but now tied to
+                                // prey's own separate eventual collapse (they run out
+                                // of food), not an arbitrary background death rate.
 
     for (int i = 0; i < ticks; ++i) {
         sim.tick(dt);

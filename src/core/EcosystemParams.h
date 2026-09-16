@@ -4,24 +4,14 @@
 
 namespace eco {
 
-// Phase 1: parameters for the still-mean-field predator side of the model (spatial
-// predation arrives in a later phase). As of Phase 2, prey are no longer driven by an
-// abstract birth rate `a` -- see ReproductionParams -- so this now covers only
-// predation and predator mortality.
-struct LotkaVolterraParams {
-    float predationRate = 0.005f;       // b: predation events per prey-predator pair per unit time
-    float conversionEfficiency = 0.5f;  // c: predator births per successful predation
-    float predatorDeathRate = 0.8f;     // d: predator deaths per predator per unit time
-};
-
-// Safety valve, not a modeling feature: demographic noise can occasionally drive
-// predators extinct (see Phase 1 notes), which historically let prey grow without
-// bound. This caps per-tick births once a population gets absurdly large, so a rare
-// bad draw degrades into flat growth instead of exhausting entt's entity storage.
+// Safety valve, not a modeling feature: caps per-tick births once a population gets
+// absurdly large, so a rare bad draw degrades into flat growth instead of exhausting
+// entt's entity storage. See Phase 1 notes for how this was discovered.
 inline constexpr std::size_t kMaxSpeciesPopulation = 20000;
 
-// Starting Energy for prey seeded at simulation setup.
+// Starting Energy for prey and predators seeded at simulation setup.
 inline constexpr float kInitialPreyEnergy = 50.0f;
+inline constexpr float kInitialPredatorEnergy = 50.0f;
 
 // Phase 2: per-cell vegetation regrowth. Logistic growth dV/dt = r(T)*V*(1-V), where
 // the rate r(T) is scaled down by a Gaussian "suitability" curve around
@@ -80,6 +70,27 @@ struct GeneticsParams {
 struct MigrationParams {
     float moveAttemptRate = 2.0f;         // move attempts per unit time
     float minVegetationAdvantage = 0.05f; // required edge over the current cell to bother moving
+};
+
+// Predator resilience fix: predators now have their own Energy economy, mirroring
+// prey's Phase 2 mechanic, instead of a flat background death rate with zero buffer.
+// A kill's prey biomass feeds ONE randomly-chosen existing predator's Energy (not an
+// instant population-wide birth), predators pay a constant metabolic cost every tick
+// regardless of hunting success, starve if Energy hits zero, and reproduce
+// individually once Energy crosses a threshold -- the same "coast through a lean
+// patch" resilience prey have always had, instead of instant, unbuffered dependence
+// on that exact tick's kill count. Diagnosed via tracing: with the old flat
+// Poisson(d*Predator) death and no reserves, small predator populations kept landing
+// exactly on zero -- an absorbing state, since a kill (and so a new predator) requires
+// at least one living predator to begin with.
+struct PredatorParams {
+    float predationRate = 0.002f;         // b: predation events per prey-predator pair per unit time
+    float energyPerKill = 200.0f;         // Energy gained by the predator that makes a kill
+    float metabolicRate = 15.0f;          // Energy spent per unit time just staying alive
+    float reproductionThreshold = 70.0f;  // minimum Energy to be reproduction-eligible
+    float reproductionAttemptRate = 0.2f; // probability rate per unit time once eligible
+    float offspringEnergy = 40.0f;        // starting Energy given to the newborn
+    float parentEnergyCost = 55.0f;       // Energy deducted from the parent per birth
 };
 
 } // namespace eco
