@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Plot population history CSV from ecosystem_sim: time,prey,predator,
-avg_vegetation,avg_prey_speed,avg_predator_energy.
+avg_vegetation,avg_prey_speed,avg_predator_energy,infected_prey,immune_prey.
 
 Usage: python3 tools/plot_population.py [population_history.csv] [output.png]
 """
@@ -13,13 +13,16 @@ def main() -> None:
     csv_path = sys.argv[1] if len(sys.argv) > 1 else "population_history.csv"
     out_path = sys.argv[2] if len(sys.argv) > 2 else "population_history.png"
 
-    time, prey, predator, vegetation, speed, predator_energy = [], [], [], [], [], []
+    time, prey, predator = [], [], []
+    vegetation, speed, predator_energy = [], [], []
+    infected, immune = [], []
     with open(csv_path, newline="") as f:
         reader = csv.DictReader(f)
         fields = reader.fieldnames or []
         has_vegetation = "avg_vegetation" in fields
         has_speed = "avg_prey_speed" in fields
         has_predator_energy = "avg_predator_energy" in fields
+        has_disease = "infected_prey" in fields
         for row in reader:
             time.append(float(row["time"]))
             prey.append(int(row["prey"]))
@@ -30,6 +33,9 @@ def main() -> None:
                 speed.append(float(row["avg_prey_speed"]))
             if has_predator_energy:
                 predator_energy.append(float(row["avg_predator_energy"]))
+            if has_disease:
+                infected.append(int(row["infected_prey"]))
+                immune.append(int(row["immune_prey"]))
 
     import matplotlib.pyplot as plt
 
@@ -38,6 +44,7 @@ def main() -> None:
         + (1 if vegetation else 0)
         + (1 if speed else 0)
         + (1 if predator_energy else 0)
+        + (1 if infected else 0)
     )
     fig, axes = plt.subplots(1, ncols, figsize=(6 * ncols, 5))
     ax_time, ax_phase = axes[0], axes[1]
@@ -82,6 +89,16 @@ def main() -> None:
         ax_energy.set_ylabel("Mean predator Energy")
         ax_energy.set_title("Predator Energy reserve vs. time")
         ax_energy.set_ylim(0, 105)
+
+    if infected:
+        ax_disease = axes[next_axis]
+        next_axis += 1
+        ax_disease.plot(time, infected, label="Infected", color="tab:red")
+        ax_disease.plot(time, immune, label="Immune (recovered)", color="tab:cyan")
+        ax_disease.set_xlabel("Simulated time")
+        ax_disease.set_ylabel("Prey count")
+        ax_disease.set_title("Disease (S/I/R) vs. time")
+        ax_disease.legend()
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)

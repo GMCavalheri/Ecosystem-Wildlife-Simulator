@@ -21,6 +21,13 @@ void MetricsRecorder::snapshot(const entt::registry& registry, const Grid& grid,
             if (const auto* traits = registry.try_get<const GeneticTraits>(entity)) {
                 speedTotal += traits->speed;
             }
+            if (const auto* health = registry.try_get<const Health>(entity)) {
+                if (health->infected) {
+                    ++snap.infectedPreyCount;
+                } else if (health->immune) {
+                    ++snap.immunePreyCount;
+                }
+            }
         } else if (id == kPredatorSpeciesId) {
             ++snap.predatorCount;
             if (const auto* energy = registry.try_get<const Energy>(entity)) {
@@ -47,11 +54,12 @@ void MetricsRecorder::snapshot(const entt::registry& registry, const Grid& grid,
 
 void MetricsRecorder::writeCsv(const std::string& path) const {
     std::ofstream out(path);
-    out << "time,prey,predator,avg_vegetation,avg_prey_speed,avg_predator_energy\n";
+    out << "time,prey,predator,avg_vegetation,avg_prey_speed,avg_predator_energy,"
+           "infected_prey,immune_prey\n";
     for (const auto& snap : history_) {
         out << snap.time << ',' << snap.preyCount << ',' << snap.predatorCount << ','
             << snap.avgVegetation << ',' << snap.avgPreySpeed << ',' << snap.avgPredatorEnergy
-            << '\n';
+            << ',' << snap.infectedPreyCount << ',' << snap.immunePreyCount << '\n';
     }
 }
 

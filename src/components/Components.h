@@ -36,10 +36,13 @@ struct GeneticTraits {
     float fertility = 1.0f;
 };
 
+// value is a reserved hook for a future phase (e.g. combat/environmental damage) --
+// Phase 4's SIR disease model only reads/writes infected/immune/infectionTimer.
 struct Health {
     float value = 100.0f;
     bool infected = false;
     float infectionTimer = 0.0f;
+    bool immune = false; // recovered -- the "R" compartment in SIR
 };
 
 // Crosses a threshold to spawn offspring.

@@ -26,15 +26,23 @@ public:
     Simulation(int gridWidth, int gridHeight, PredatorParams predatorParams = {},
                VegetationParams vegParams = {}, ForagingParams foragingParams = {},
                ReproductionParams reproParams = {}, GeneticsParams geneticsParams = {},
-               MigrationParams migrationParams = {}, unsigned rngSeed = 1234u);
+               MigrationParams migrationParams = {}, DiseaseParams diseaseParams = {},
+               unsigned rngSeed = 1234u);
 
     void tick(float dt);
 
     // Creates `count` entities of the given species. Prey get a random Position on the
-    // grid, starting Energy (Phase 2), and homogeneous starting GeneticTraits (Phase 3
-    // -- variance emerges only from mutation). Predators get starting Energy too (the
-    // resilience fix) but remain non-spatial/mean-field for now.
+    // grid, starting Energy (Phase 2), homogeneous starting GeneticTraits (Phase 3 --
+    // variance emerges only from mutation), and a fully susceptible Health (Phase 4).
+    // Predators get starting Energy too (the resilience fix) but remain
+    // non-spatial/mean-field for now, so disease doesn't reach them yet.
     void seedPopulation(SpeciesId species, std::size_t count);
+
+    // Phase 4: infects `count` randomly-chosen susceptible prey -- the explicit
+    // "patient zero" seeding step for an outbreak, kept separate from population
+    // seeding so tests/demos can control outbreak size independently of population
+    // size.
+    void infectRandomPrey(std::size_t count);
 
     entt::registry& registry() { return registry_; }
     const entt::registry& registry() const { return registry_; }
@@ -58,6 +66,7 @@ private:
     ReproductionParams reproParams_;
     GeneticsParams geneticsParams_;
     MigrationParams migrationParams_;
+    DiseaseParams diseaseParams_;
 
     EnvironmentSystem environmentSystem_;
     ForagingSystem foragingSystem_;

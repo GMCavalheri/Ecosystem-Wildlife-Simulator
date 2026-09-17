@@ -64,6 +64,7 @@ void ReproductionSystem::update(entt::registry& registry, std::mt19937& rng, flo
         registry.emplace<Position>(offspring, parentPosition);
         registry.emplace<Energy>(offspring, reproParams.offspringEnergy, 100.0f);
         registry.emplace<GeneticTraits>(offspring, offspringTraits);
+        registry.emplace<Health>(offspring, 100.0f, false, 0.0f, false);
     }
 
     // Predators: same Energy-gated pattern, mirroring prey's resilience mechanic (see

@@ -19,7 +19,7 @@
 TEST_CASE("Prey population grows and oscillates under vegetation/predation limits",
           "[population-dynamics]") {
     eco::PredatorParams predatorParams; // b=0.002 (mean-field predation)
-    eco::Simulation sim(64, 64, predatorParams, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
+    eco::Simulation sim(64, 64, predatorParams, {}, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
 
     sim.seedPopulation(eco::kPreySpeciesId, 280);
     sim.seedPopulation(eco::kPredatorSpeciesId, 10);

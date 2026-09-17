@@ -18,7 +18,7 @@ TEST_CASE("A well-fed predator survives on its Energy reserve with zero kills, t
           "starves once it's actually empty",
           "[predator-resilience]") {
     eco::PredatorParams params;
-    eco::Simulation sim(8, 8, params, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
+    eco::Simulation sim(8, 8, params, {}, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
     sim.seedPopulation(eco::kPredatorSpeciesId, 1);
     // No prey seeded: zero kills are possible for the entire run, isolating the
     // metabolism/starvation buffer from any hunting-driven Energy gain.
@@ -54,7 +54,7 @@ TEST_CASE("Predator population grows well past its starting size and sustains fo
           "many generations",
           "[predator-resilience]") {
     eco::PredatorParams params; // b=0.002
-    eco::Simulation sim(64, 64, params, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
+    eco::Simulation sim(64, 64, params, {}, {}, {}, {}, {}, {}, /*rngSeed=*/1234u);
     sim.seedPopulation(eco::kPreySpeciesId, 280);
     sim.seedPopulation(eco::kPredatorSpeciesId, 10);
 

@@ -93,4 +93,19 @@ struct PredatorParams {
     float parentEnergyCost = 55.0f;       // Energy deducted from the parent per birth
 };
 
+// Phase 4: SIR-style disease, local rather than mean-field -- transmission only
+// happens between prey sharing the same cell, so infection probability scales with
+// local crowding (contact rate), exactly the "self-correcting overcrowding" the plan
+// calls for. An infected individual leaves the infectious state at combined rate
+// (recoveryRate + diseaseDeathRate); which of the two happens is decided by their
+// relative share of that combined rate -- the standard competing-exponential-hazards
+// construction, so case fatality is a derived quantity, not a separately hand-tuned
+// parameter. R0 = transmissionRate / (recoveryRate + diseaseDeathRate) in the
+// well-mixed (single-cell) special case used for validation.
+struct DiseaseParams {
+    float transmissionRate = 0.15f;  // beta: infection probability rate per infected cellmate per unit time
+    float recoveryRate = 0.3f;       // gamma: recovery rate per unit time while infected
+    float diseaseDeathRate = 0.05f;  // mu: disease-induced death rate per unit time while infected
+};
+
 } // namespace eco

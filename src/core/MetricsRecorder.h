@@ -22,14 +22,16 @@ public:
         float avgVegetation = 0.0f;
         float avgPreySpeed = 0.0f;
         float avgPredatorEnergy = 0.0f;
+        std::size_t infectedPreyCount = 0;
+        std::size_t immunePreyCount = 0;
     };
 
     void snapshot(const entt::registry& registry, const Grid& grid, float time);
 
     const std::vector<Snapshot>& history() const { return history_; }
 
-    // Writes time,prey,predator,avg_vegetation,avg_prey_speed,avg_predator_energy
-    // rows for external plotting/validation.
+    // Writes time,prey,predator,avg_vegetation,avg_prey_speed,avg_predator_energy,
+    // infected_prey,immune_prey rows for external plotting/validation.
     void writeCsv(const std::string& path) const;
 
 private:

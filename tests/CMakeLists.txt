@@ -8,6 +8,7 @@ add_executable(ecosystem_tests
     test_genetics.cpp
     test_migration.cpp
     test_predator_resilience.cpp
+    test_disease.cpp
 )
 
 target_link_libraries(ecosystem_tests PRIVATE ecosystem_core Catch2::Catch2WithMain)

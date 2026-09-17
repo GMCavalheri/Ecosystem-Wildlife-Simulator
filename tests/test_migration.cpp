@@ -24,7 +24,7 @@ TEST_CASE("Migration keeps prey above their starting count where a stationary "
 
     std::size_t minPreyWithMigration = std::numeric_limits<std::size_t>::max();
     {
-        eco::Simulation sim(64, 64, {}, {}, {}, {}, {}, {}, /*rngSeed=*/1234u); // default: migration on
+        eco::Simulation sim(64, 64, {}, {}, {}, {}, {}, {}, {}, /*rngSeed=*/1234u); // default: migration on
         sim.seedPopulation(eco::kPreySpeciesId, 280);
         sim.seedPopulation(eco::kPredatorSpeciesId, 10);
 
@@ -39,7 +39,7 @@ TEST_CASE("Migration keeps prey above their starting count where a stationary "
     {
         eco::MigrationParams noMigration;
         noMigration.moveAttemptRate = 0.0f;
-        eco::Simulation sim(64, 64, {}, {}, {}, {}, {}, noMigration, /*rngSeed=*/1234u);
+        eco::Simulation sim(64, 64, {}, {}, {}, {}, {}, noMigration, {}, /*rngSeed=*/1234u);
         sim.seedPopulation(eco::kPreySpeciesId, 280);
         sim.seedPopulation(eco::kPredatorSpeciesId, 10);
 
