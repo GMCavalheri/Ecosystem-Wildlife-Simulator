@@ -24,9 +24,7 @@ planned series of simulation games (farm, industry, crime, ...).
 | Language/standard | C++20 |
 | Build system | CMake + vcpkg |
 | ECS | [EnTT](https://github.com/skypjack/entt) |
-| Math | [GLM](https://github.com/g-truc/glm) *(render feature)* |
-| Rendering | [raylib](https://www.raylib.com/) *(render feature)* |
-| Debug UI / graphs | [Dear ImGui](https://github.com/ocornut/imgui) + [ImPlot](https://github.com/epezent/implot) *(render feature)* |
+| Rendering + live HUD/graphs | [raylib](https://www.raylib.com/) *(render feature)* |
 | Logging | [spdlog](https://github.com/gabime/spdlog) |
 | Testing | [Catch2](https://github.com/catchorg/Catch2) |
 | Serialization | [nlohmann/json](https://github.com/nlohmann/json) *(persistence feature)* |
@@ -55,7 +53,7 @@ cmake --preset default -DVCPKG_MANIFEST_FEATURES="render"
 - `src/environment/` — the terrain grid ([Grid.h](src/environment/Grid.h)), a flat `std::vector<Cell>` kept outside the ECS for cache locality.
 - `src/systems/` — one class per system, run in a fixed order each tick: `EnvironmentSystem` -> `ForagingSystem` -> `PredationSystem` -> `ReproductionSystem` -> `DiseaseSystem` -> `MigrationSystem` -> `MortalitySystem`.
 - `src/core/` — [`Simulation`](src/core/Simulation.h) owns the `entt::registry` and `Grid` and drives the tick loop; `MetricsRecorder` snapshots state for validation.
-- `src/render/` — optional visualization layer (raylib + ImGui/ImPlot), only linked in when the `render` feature is enabled. Empty until Phase 6.
+- `src/render/` — optional [`Viewer`](src/render/Viewer.h): a raylib top-down grid renderer with a live HUD, population graph, and keyboard-tunable parameters, only linked into `ecosystem_viewer` when the `render` feature is enabled. No Dear ImGui/ImPlot -- vcpkg has no raylib/ImGui bridge, so the HUD/graphs/controls are drawn with raylib's own primitives and keyboard input instead of a GUI panel.
 - `tests/` — Catch2 unit tests, especially for the math-heavy growth/predation logic.
 - `data/` — config JSON (species params, tunables), added starting Phase 8.
 - `tools/` — CSV-to-plot scripts for validating population dynamics (Phase 1).
@@ -68,7 +66,7 @@ cmake --preset default -DVCPKG_MANIFEST_FEATURES="render"
 - **Phase 3 -- Genetics**: per-individual `GeneticTraits` mutation on reproduction; check trait drift under selection pressure.
 - **Phase 4 -- Disease (SIR)**: `Health`/infection system, validated against known SIR dynamics.
 - **Phase 5 -- Migration**: gradient-following movement; watch for clustering/resource collapse.
-- **Phase 6 -- Visualization**: raylib grid renderer + ImGui/ImPlot live population graphs and tunable parameters.
+- **Phase 6 -- Visualization**: raylib grid renderer + live population graph, drawn with raylib's own primitives; keyboard-tunable parameters (vegetation regrowth, disease transmission, migration rate) and a manual outbreak trigger. Build with `-DVCPKG_MANIFEST_FEATURES=render` and run `ecosystem_viewer`.
 - **Phase 7 -- Performance**: profile at 10k+ agents, parallelize independent systems, spatial partitioning for neighbor queries.
 - **Phase 8 -- Expansion**: more species, seasonal migration, multiple biomes, save/load via JSON.
 

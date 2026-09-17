@@ -55,6 +55,15 @@ public:
     MetricsRecorder& metrics() { return metricsRecorder_; }
     const MetricsRecorder& metrics() const { return metricsRecorder_; }
 
+    // Mutable references for live tuning (Phase 6's viewer adjusts these from
+    // keyboard input at runtime). Headless callers can ignore these entirely.
+    VegetationParams& vegetationParams() { return vegParams_; }
+    const VegetationParams& vegetationParams() const { return vegParams_; }
+    DiseaseParams& diseaseParams() { return diseaseParams_; }
+    const DiseaseParams& diseaseParams() const { return diseaseParams_; }
+    MigrationParams& migrationParams() { return migrationParams_; }
+    const MigrationParams& migrationParams() const { return migrationParams_; }
+
 private:
     entt::registry registry_;
     Grid grid_;

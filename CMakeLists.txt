@@ -28,5 +28,19 @@ target_link_libraries(ecosystem_core PUBLIC EnTT::EnTT spdlog::spdlog)
 add_executable(ecosystem_sim src/main.cpp)
 target_link_libraries(ecosystem_sim PRIVATE ecosystem_core)
 
+# Phase 6: optional viewer, only built when the vcpkg "render" feature is installed
+# (cmake --preset default -DVCPKG_MANIFEST_FEATURES=render). The headless core never
+# depends on this.
+find_package(raylib CONFIG QUIET)
+if(raylib_FOUND)
+    add_executable(ecosystem_viewer
+        src/render/main.cpp
+        src/render/Viewer.cpp
+    )
+    target_link_libraries(ecosystem_viewer PRIVATE ecosystem_core raylib)
+else()
+    message(STATUS "raylib not found -- skipping ecosystem_viewer (enable the vcpkg 'render' feature to build it)")
+endif()
+
 enable_testing()
 add_subdirectory(tests)
