@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "components/Components.h"
+#include "components/PreyGroup.h"
 
 namespace eco {
 
@@ -21,20 +22,29 @@ void ReproductionSystem::update(entt::registry& registry, std::mt19937& rng, flo
                                  const ReproductionParams& reproParams,
                                  const GeneticsParams& geneticsParams,
                                  const PredatorParams& predatorParams) {
-    // Prey: Energy-gated reproduction with mutated GeneticTraits, at the parent's cell.
-    std::vector<entt::entity> eligiblePrey;
-    auto view = registry.view<Species, Energy>();
-    for (auto entity : view) {
-        if (view.get<Species>(entity).id == kPreySpeciesId &&
-            view.get<Energy>(entity).value >= reproParams.energyThreshold) {
-            eligiblePrey.push_back(entity);
+    // One scan finds both species' eligible parents (this used to be two full passes).
+    eligiblePrey_.clear();
+    eligiblePredators_.clear();
+    for (auto [entity, position, energy, traits, health] : preyGroup(registry).each()) {
+        if (energy.value >= reproParams.energyThreshold) {
+            eligiblePrey_.push_back(entity);
         }
     }
+    // Predators: the (few) entities with an Energy but no GeneticTraits.
+    for (auto [entity, species, energy] :
+         registry.view<Species, Energy>(entt::exclude<GeneticTraits>).each()) {
+        if (species.id == kPredatorSpeciesId &&
+            energy.value >= predatorParams.reproductionThreshold) {
+            eligiblePredators_.push_back(entity);
+        }
+    }
+
+    // Prey: Energy-gated reproduction with mutated GeneticTraits, at the parent's cell.
 
     std::bernoulli_distribution preyAttempt(
         std::clamp(static_cast<double>(reproParams.attemptRate) * dt, 0.0, 1.0));
 
-    for (auto entity : eligiblePrey) {
+    for (auto entity : eligiblePrey_) {
         if (!preyAttempt(rng)) {
             continue;
         }
@@ -70,18 +80,10 @@ void ReproductionSystem::update(entt::registry& registry, std::mt19937& rng, flo
     // Predators: same Energy-gated pattern, mirroring prey's resilience mechanic (see
     // PredatorParams for why). No Position/GeneticTraits yet -- predation is still
     // mean-field/non-spatial.
-    std::vector<entt::entity> eligiblePredators;
-    for (auto entity : view) {
-        if (view.get<Species>(entity).id == kPredatorSpeciesId &&
-            view.get<Energy>(entity).value >= predatorParams.reproductionThreshold) {
-            eligiblePredators.push_back(entity);
-        }
-    }
-
     std::bernoulli_distribution predatorAttempt(std::clamp(
         static_cast<double>(predatorParams.reproductionAttemptRate) * dt, 0.0, 1.0));
 
-    for (auto entity : eligiblePredators) {
+    for (auto entity : eligiblePredators_) {
         if (!predatorAttempt(rng)) {
             continue;
         }

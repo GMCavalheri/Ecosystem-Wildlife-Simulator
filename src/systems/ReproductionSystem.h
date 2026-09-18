@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random>
+#include <vector>
 
 #include <entt/entt.hpp>
 
@@ -18,6 +19,11 @@ public:
     void update(entt::registry& registry, std::mt19937& rng, float dt,
                 const ReproductionParams& reproParams, const GeneticsParams& geneticsParams,
                 const PredatorParams& predatorParams);
+
+private:
+    // Reused scratch buffers (Phase 7).
+    std::vector<entt::entity> eligiblePrey_;
+    std::vector<entt::entity> eligiblePredators_;
 };
 
 } // namespace eco

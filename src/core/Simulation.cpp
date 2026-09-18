@@ -58,17 +58,35 @@ void Simulation::infectRandomPrey(std::size_t count) {
     }
 }
 
+void Simulation::setThreadCount(unsigned threads) {
+    pool_ = threads > 1 ? std::make_unique<ThreadPool>(threads) : nullptr;
+}
+
 void Simulation::tick(float dt) {
-    environmentSystem_.update(grid_, dt, simulationTime_, vegParams_);
-    foragingSystem_.update(registry_, grid_, dt, foragingParams_);
-    predationSystem_.update(registry_, rng_, dt, predatorParams_);
-    reproductionSystem_.update(registry_, rng_, dt, reproParams_, geneticsParams_, predatorParams_);
-    diseaseSystem_.update(registry_, rng_, dt, diseaseParams_);
-    migrationSystem_.update(registry_, grid_, rng_, dt, migrationParams_);
-    mortalitySystem_.update(registry_);
+    using Clock = std::chrono::steady_clock;
+    auto stage = [](double& accumulator, auto&& run) {
+        const auto start = Clock::now();
+        run();
+        accumulator += std::chrono::duration<double>(Clock::now() - start).count();
+    };
+
+    stage(timings_.environment,
+          [&] { environmentSystem_.update(grid_, dt, simulationTime_, vegParams_, pool_.get()); });
+    stage(timings_.foraging, [&] { foragingSystem_.update(registry_, grid_, dt, foragingParams_); });
+    stage(timings_.predation,
+          [&] { predationSystem_.update(registry_, rng_, dt, predatorParams_); });
+    stage(timings_.reproduction, [&] {
+        reproductionSystem_.update(registry_, rng_, dt, reproParams_, geneticsParams_,
+                                   predatorParams_);
+    });
+    stage(timings_.disease, [&] { diseaseSystem_.update(registry_, grid_, rng_, dt, diseaseParams_); });
+    stage(timings_.migration,
+          [&] { migrationSystem_.update(registry_, grid_, rng_, dt, migrationParams_, pool_.get()); });
+    stage(timings_.mortality, [&] { mortalitySystem_.update(registry_); });
 
     simulationTime_ += dt;
-    metricsRecorder_.snapshot(registry_, grid_, simulationTime_);
+    stage(timings_.metrics,
+          [&] { metricsRecorder_.snapshot(registry_, grid_, simulationTime_); });
 }
 
 } // namespace eco

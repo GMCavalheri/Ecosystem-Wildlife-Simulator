@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random>
+#include <vector>
 
 #include <entt/entt.hpp>
 
@@ -18,6 +19,12 @@ class PredationSystem {
 public:
     void update(entt::registry& registry, std::mt19937& rng, float dt,
                 const PredatorParams& params);
+
+private:
+    // Reused scratch buffers (Phase 7): avoids reallocating per tick.
+    std::vector<entt::entity> prey_;
+    std::vector<double> cumulativeWeight_;
+    std::vector<entt::entity> predators_;
 };
 
 } // namespace eco

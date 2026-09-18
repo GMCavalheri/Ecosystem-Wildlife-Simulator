@@ -1,6 +1,8 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
+#include <memory>
 #include <random>
 
 #include <entt/entt.hpp>
@@ -8,6 +10,7 @@
 #include "components/Components.h"
 #include "core/EcosystemParams.h"
 #include "core/MetricsRecorder.h"
+#include "core/ThreadPool.h"
 #include "environment/Grid.h"
 #include "systems/DiseaseSystem.h"
 #include "systems/EnvironmentSystem.h"
@@ -18,6 +21,24 @@
 #include "systems/ReproductionSystem.h"
 
 namespace eco {
+
+// Phase 7: cumulative wall-clock time (seconds) spent in each stage of tick(), for
+// profiling. Cheap enough (a handful of steady_clock reads per tick) to leave on.
+struct SystemTimings {
+    double environment = 0.0;
+    double foraging = 0.0;
+    double predation = 0.0;
+    double reproduction = 0.0;
+    double disease = 0.0;
+    double migration = 0.0;
+    double mortality = 0.0;
+    double metrics = 0.0;
+
+    double total() const {
+        return environment + foraging + predation + reproduction + disease + migration +
+               mortality + metrics;
+    }
+};
 
 // Owns the ECS registry and terrain grid, and drives the fixed system order each tick.
 // Headless by design — rendering is an optional layer built on top of this.
@@ -52,6 +73,14 @@ public:
 
     float simulationTime() const { return simulationTime_; }
 
+    const SystemTimings& timings() const { return timings_; }
+
+    // Phase 7: runs the parallel-safe systems (environment, migration) on `threads`
+    // threads. The default is 1 (fully serial). Results are bit-identical for every
+    // thread count -- parallel work is split into fixed-size chunks with pre-assigned
+    // RNG seeds, never by thread.
+    void setThreadCount(unsigned threads);
+
     MetricsRecorder& metrics() { return metricsRecorder_; }
     const MetricsRecorder& metrics() const { return metricsRecorder_; }
 
@@ -68,6 +97,8 @@ private:
     entt::registry registry_;
     Grid grid_;
     float simulationTime_ = 0.0f;
+    SystemTimings timings_;
+    std::unique_ptr<ThreadPool> pool_; // null => serial
     std::mt19937 rng_;
     PredatorParams predatorParams_;
     VegetationParams vegParams_;

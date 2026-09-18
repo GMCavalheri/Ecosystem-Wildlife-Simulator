@@ -3,21 +3,15 @@
 #include <algorithm>
 
 #include "components/Components.h"
+#include "components/PreyGroup.h"
 #include "environment/Grid.h"
 
 namespace eco {
 
 void ForagingSystem::update(entt::registry& registry, Grid& grid, float dt,
                              const ForagingParams& params) {
-    auto view = registry.view<Species, Position, Energy>();
-    for (auto entity : view) {
-        if (view.get<Species>(entity).id != kPreySpeciesId) {
-            continue;
-        }
-
-        const auto& position = view.get<Position>(entity);
-        auto& energy = view.get<Energy>(entity);
-
+    // Prey only (see PreyGroup.h): a linear walk over contiguous component arrays.
+    for (auto [entity, position, energy, traits, health] : preyGroup(registry).each()) {
         Cell& cell = grid.at(position.cellX, position.cellY);
 
         const float wanted = params.maxIntakeRate * dt;

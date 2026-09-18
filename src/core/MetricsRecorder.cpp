@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "components/Components.h"
+#include "components/PreyGroup.h"
 #include "environment/Grid.h"
 
 namespace eco {
@@ -13,26 +14,22 @@ void MetricsRecorder::snapshot(const entt::registry& registry, const Grid& grid,
 
     double speedTotal = 0.0;
     double predatorEnergyTotal = 0.0;
-    auto view = registry.view<const Species>();
-    for (auto entity : view) {
-        const auto id = view.get<const Species>(entity).id;
-        if (id == kPreySpeciesId) {
+    if (auto prey = preyGroup(registry)) {
+        for (auto [entity, position, energy, traits, health] : prey.each()) {
             ++snap.preyCount;
-            if (const auto* traits = registry.try_get<const GeneticTraits>(entity)) {
-                speedTotal += traits->speed;
+            speedTotal += traits.speed;
+            if (health.infected) {
+                ++snap.infectedPreyCount;
+            } else if (health.immune) {
+                ++snap.immunePreyCount;
             }
-            if (const auto* health = registry.try_get<const Health>(entity)) {
-                if (health->infected) {
-                    ++snap.infectedPreyCount;
-                } else if (health->immune) {
-                    ++snap.immunePreyCount;
-                }
-            }
-        } else if (id == kPredatorSpeciesId) {
+        }
+    }
+    for (auto [entity, species, energy] :
+         registry.view<const Species, const Energy>(entt::exclude<GeneticTraits>).each()) {
+        if (species.id == kPredatorSpeciesId) {
             ++snap.predatorCount;
-            if (const auto* energy = registry.try_get<const Energy>(entity)) {
-                predatorEnergyTotal += energy->value;
-            }
+            predatorEnergyTotal += energy.value;
         }
     }
     snap.avgPreySpeed =

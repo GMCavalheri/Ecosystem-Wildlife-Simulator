@@ -1,104 +1,75 @@
 #include "systems/DiseaseSystem.h"
 
 #include <algorithm>
-#include <unordered_map>
-#include <vector>
 
 #include "components/Components.h"
+#include "components/PreyGroup.h"
+#include "environment/Grid.h"
 
 namespace eco {
 
-namespace {
+void DiseaseSystem::update(entt::registry& registry, const Grid& grid, std::mt19937& rng,
+                            float dt, const DiseaseParams& params) {
+    const int width = grid.width();
+    auto prey = preyGroup(registry);
 
-struct CellBucket {
-    std::vector<entt::entity> susceptible;
-    int infectedCount = 0;
-};
-
-long long cellKey(const Position& position) {
-    return static_cast<long long>(position.cellY) * 1'000'000LL + position.cellX;
-}
-
-} // namespace
-
-void DiseaseSystem::update(entt::registry& registry, std::mt19937& rng, float dt,
-                            const DiseaseParams& params) {
-    // Group prey by cell so transmission only happens between cellmates.
-    std::unordered_map<long long, CellBucket> cells;
-    auto view = registry.view<Species, Position, Health>();
-    for (auto entity : view) {
-        if (view.get<Species>(entity).id != kPreySpeciesId) {
+    // Pass 1: how many infected prey does each cell hold?
+    infectedPerCell_.assign(static_cast<std::size_t>(width) * grid.height(), 0);
+    std::size_t totalInfected = 0;
+    for (auto [entity, position, energy, traits, health] : prey.each()) {
+        if (!health.infected) {
             continue;
         }
-        const auto& health = view.get<Health>(entity);
-        auto& bucket = cells[cellKey(view.get<Position>(entity))];
-        if (health.infected) {
-            ++bucket.infectedCount;
-        } else if (!health.immune) {
-            bucket.susceptible.push_back(entity);
-        }
+        ++infectedPerCell_[static_cast<std::size_t>(position.cellY) * width + position.cellX];
+        ++totalInfected;
+    }
+    if (totalInfected == 0) {
+        return;
     }
 
-    // Transmission: each susceptible's infection risk this tick scales with how many
-    // infected cellmates it has.
-    for (auto& [key, bucket] : cells) {
-        if (bucket.infectedCount == 0 || bucket.susceptible.empty()) {
-            continue;
-        }
-        const double p = std::clamp(static_cast<double>(params.transmissionRate) *
-                                         bucket.infectedCount * dt,
-                                     0.0, 1.0);
-        std::bernoulli_distribution infects(p);
-        for (auto entity : bucket.susceptible) {
-            if (infects(rng)) {
-                auto& health = registry.get<Health>(entity);
+    // Infected prey leave the infectious state at the combined rate (recovery +
+    // disease death); which outcome happens is decided by their relative share.
+    const double totalLeaveRate =
+        static_cast<double>(params.recoveryRate) + static_cast<double>(params.diseaseDeathRate);
+    const double deathShare =
+        totalLeaveRate > 0.0 ? static_cast<double>(params.diseaseDeathRate) / totalLeaveRate : 0.0;
+    std::bernoulli_distribution leaves(std::clamp(totalLeaveRate * dt, 0.0, 1.0));
+    std::bernoulli_distribution dies(deathShare);
+
+    toRecover_.clear();
+    toKill_.clear();
+
+    // Pass 2: each prey is visited exactly once. Susceptibles are exposed to the
+    // infected count their cell had at the start of the tick (so a newly infected prey
+    // doesn't also progress in the same tick); infected prey progress.
+    for (auto [entity, position, energy, traits, health] : prey.each()) {
+        if (health.infected) {
+            health.infectionTimer += dt;
+            if (leaves(rng)) {
+                (dies(rng) ? toKill_ : toRecover_).push_back(entity);
+            }
+        } else if (!health.immune) {
+            const int infectedCellmates =
+                infectedPerCell_[static_cast<std::size_t>(position.cellY) * width + position.cellX];
+            if (infectedCellmates == 0) {
+                continue;
+            }
+            const double p = std::clamp(
+                static_cast<double>(params.transmissionRate) * infectedCellmates * dt, 0.0, 1.0);
+            if (std::bernoulli_distribution(p)(rng)) {
                 health.infected = true;
                 health.infectionTimer = 0.0f;
             }
         }
     }
 
-    // Progression: infected prey leave the infectious state at the combined rate
-    // (recovery + disease death); which outcome happens is decided by their relative
-    // share of that combined rate.
-    const double totalLeaveRate =
-        static_cast<double>(params.recoveryRate) + static_cast<double>(params.diseaseDeathRate);
-    const double deathShare =
-        totalLeaveRate > 0.0 ? static_cast<double>(params.diseaseDeathRate) / totalLeaveRate : 0.0;
-
-    std::vector<entt::entity> toRecover;
-    std::vector<entt::entity> toKill;
-
-    for (auto entity : view) {
-        if (view.get<Species>(entity).id != kPreySpeciesId) {
-            continue;
-        }
-        auto& health = view.get<Health>(entity);
-        if (!health.infected) {
-            continue;
-        }
-        health.infectionTimer += dt;
-
-        std::bernoulli_distribution leaves(std::clamp(totalLeaveRate * dt, 0.0, 1.0));
-        if (!leaves(rng)) {
-            continue;
-        }
-
-        std::bernoulli_distribution dies(deathShare);
-        if (dies(rng)) {
-            toKill.push_back(entity);
-        } else {
-            toRecover.push_back(entity);
-        }
-    }
-
-    for (auto entity : toRecover) {
+    for (auto entity : toRecover_) {
         auto& health = registry.get<Health>(entity);
         health.infected = false;
         health.immune = true;
         health.infectionTimer = 0.0f;
     }
-    for (auto entity : toKill) {
+    for (auto entity : toKill_) {
         registry.destroy(entity);
     }
 }

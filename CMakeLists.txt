@@ -11,6 +11,8 @@ find_package(spdlog CONFIG REQUIRED)
 add_library(ecosystem_core
     src/core/Simulation.cpp
     src/core/MetricsRecorder.cpp
+    src/core/WeightedSampling.cpp
+    src/core/ThreadPool.cpp
     src/environment/Grid.cpp
     src/systems/EnvironmentSystem.cpp
     src/systems/ForagingSystem.cpp
@@ -23,10 +25,15 @@ add_library(ecosystem_core
 
 target_include_directories(ecosystem_core PUBLIC src)
 target_compile_features(ecosystem_core PUBLIC cxx_std_20)
-target_link_libraries(ecosystem_core PUBLIC EnTT::EnTT spdlog::spdlog)
+find_package(Threads REQUIRED)
+target_link_libraries(ecosystem_core PUBLIC EnTT::EnTT spdlog::spdlog Threads::Threads)
 
 add_executable(ecosystem_sim src/main.cpp)
 target_link_libraries(ecosystem_sim PRIVATE ecosystem_core)
+
+# Phase 7: profiling harness (no extra dependencies).
+add_executable(ecosystem_bench src/bench/main.cpp)
+target_link_libraries(ecosystem_bench PRIVATE ecosystem_core)
 
 # Phase 6: optional viewer, only built when the vcpkg "render" feature is installed
 # (cmake --preset default -DVCPKG_MANIFEST_FEATURES=render). The headless core never
