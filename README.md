@@ -5,6 +5,41 @@ behavior**: no scripted events, only independent systems (terrain, populations,
 hunger, disease, migration) whose *interactions* produce the story. First entry in a
 planned series of simulation games (farm, industry, crime, ...).
 
+![The live viewer: a biome map (brown desert, green plains and wetland), two herbivore species (white and amber), and a live HUD](docs/images/viewer.png)
+
+## Results
+
+Nothing below is scripted. Each behavior falls out of local rules, and each one is checked
+against either an exact result or a control run (see `tests/`).
+
+**Boom and bust.** Phase 1 reproduced the classic Lotka-Volterra predator-prey oscillation
+(and its famous instability). Once food is limited by real vegetation, the same rules
+collapse the way overgrazed systems do -- a tragedy of the commons. Predators feed on
+kills and starve when the prey crash (their energy reserve is the right-hand panel).
+
+![Prey and predator populations over time, next to the predators' mean energy reserve](docs/images/predator-energy.png)
+
+**Disease depends on crowding.** An SIR epidemic where infection risk scales with the
+number of infected animals sharing your cell, so the epidemic threshold is
+`R0 = transmissionRate * S0 / (recoveryRate + diseaseDeathRate)`. The same pathogen
+fizzled in a sparse world and took off in a crowded one.
+
+![A crowded world: the outbreak takes off and the herd crashes](docs/images/disease-overcrowding.png)
+
+**A seasonal rhythm nobody programmed.** A latitude temperature gradient makes the season
+slide the band of fastest regrowth north and south. Animals only ever step toward greener
+neighboring cells, yet the herd's mean latitude oscillates at the seasonal period -- 18x
+more than with movement switched off, and with the same phase in every seed. It lags the
+growth band and moves less far than it does; it does not track it perfectly.
+
+![Herd latitude swinging with the seasons, versus the growth band and a herd that cannot move](docs/images/seasonal-migration.png)
+
+**Competitive exclusion.** Two herbivores share one food supply. Identical species split
+evenly (11 vs 9 wins over 20 seeds, a fair coin); give one a 10% cheaper metabolism and it
+outlasts the other in 20 of 20 runs (Gause's principle).
+
+![Two competing herbivore species: the more efficient one outlasts the other](docs/images/competition.png)
+
 ## Design Pillars
 
 1. **No scripted outcomes.** Every event (boom, crash, extinction) falls out of rules,
@@ -87,6 +122,8 @@ scenario before and after (ms per tick, single-threaded unless noted):
 | 10k (12.8k) | 4.53 | 1.06 | 0.91 |
 | 20k (24k) | 8.46 | 1.81 | 1.65 |
 | 40k (45k) | 16.57 | 3.43 | 2.90 |
+
+![Milliseconds per tick before and after profiling, at 10k, 20k and 40k prey](docs/images/performance.png)
 
 What the profile found, and what fixed it:
 
