@@ -17,8 +17,9 @@ namespace eco {
 class ReproductionSystem {
 public:
     void update(entt::registry& registry, std::mt19937& rng, float dt,
-                const ReproductionParams& reproParams, const GeneticsParams& geneticsParams,
-                const PredatorParams& predatorParams);
+                const ReproductionParams& reproParams,
+                const ReproductionParams& competitorReproParams,
+                const GeneticsParams& geneticsParams, const PredatorParams& predatorParams);
 
 private:
     // Reused scratch buffers (Phase 7).

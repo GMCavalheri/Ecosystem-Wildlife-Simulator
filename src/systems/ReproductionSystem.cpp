@@ -19,14 +19,17 @@ float mutate(float parentValue, float stdDev, float minValue, float maxValue,
 } // namespace
 
 void ReproductionSystem::update(entt::registry& registry, std::mt19937& rng, float dt,
-                                 const ReproductionParams& reproParams,
+                                 const ReproductionParams& preyReproParams,
+                                 const ReproductionParams& competitorReproParams,
                                  const GeneticsParams& geneticsParams,
                                  const PredatorParams& predatorParams) {
     // One scan finds both species' eligible parents (this used to be two full passes).
     eligiblePrey_.clear();
     eligiblePredators_.clear();
-    for (auto [entity, position, energy, traits, health] : preyGroup(registry).each()) {
-        if (energy.value >= reproParams.energyThreshold) {
+    for (auto [entity, position, energy, traits, health, species] : preyGroup(registry).each()) {
+        const ReproductionParams& params =
+            species.id == kCompetitorSpeciesId ? competitorReproParams : preyReproParams;
+        if (energy.value >= params.energyThreshold) {
             eligiblePrey_.push_back(entity);
         }
     }
@@ -41,10 +44,13 @@ void ReproductionSystem::update(entt::registry& registry, std::mt19937& rng, flo
 
     // Prey: Energy-gated reproduction with mutated GeneticTraits, at the parent's cell.
 
-    std::bernoulli_distribution preyAttempt(
-        std::clamp(static_cast<double>(reproParams.attemptRate) * dt, 0.0, 1.0));
-
     for (auto entity : eligiblePrey_) {
+        const SpeciesId speciesId = registry.get<Species>(entity).id;
+        const ReproductionParams& reproParams =
+            speciesId == kCompetitorSpeciesId ? competitorReproParams : preyReproParams;
+        // Each species has its own attempt rate; the distribution is cheap to build.
+        std::bernoulli_distribution preyAttempt(
+            std::clamp(static_cast<double>(reproParams.attemptRate) * dt, 0.0, 1.0));
         if (!preyAttempt(rng)) {
             continue;
         }
@@ -70,7 +76,7 @@ void ReproductionSystem::update(entt::registry& registry, std::mt19937& rng, flo
                    geneticsParams.minTraitValue, geneticsParams.maxTraitValue, rng);
 
         auto offspring = registry.create();
-        registry.emplace<Species>(offspring, kPreySpeciesId);
+        registry.emplace<Species>(offspring, speciesId);
         registry.emplace<Position>(offspring, parentPosition);
         registry.emplace<Energy>(offspring, reproParams.offspringEnergy, 100.0f);
         registry.emplace<GeneticTraits>(offspring, offspringTraits);

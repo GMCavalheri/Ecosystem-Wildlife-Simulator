@@ -9,6 +9,10 @@ using SpeciesId = std::uint32_t;
 // Phase 1: the two species in the mean-field Lotka-Volterra validation.
 inline constexpr SpeciesId kPreySpeciesId = 0;
 inline constexpr SpeciesId kPredatorSpeciesId = 1;
+// Phase 8: a second herbivore competing with the first for the same vegetation, with
+// its own foraging/reproduction parameters. Everything that applies to prey (movement,
+// disease, genetics, being hunted) applies to it too.
+inline constexpr SpeciesId kCompetitorSpeciesId = 2;
 
 struct Position {
     int cellX = 0;

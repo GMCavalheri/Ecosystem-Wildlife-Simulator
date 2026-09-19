@@ -65,6 +65,14 @@ public:
     // size.
     void infectRandomPrey(std::size_t count);
 
+    // Phase 8: the competitor species (kCompetitorSpeciesId) forages and reproduces with
+    // its own parameters; by default they are copies of the prey's, i.e. an identical
+    // species (useful as a control: two identical species must split evenly).
+    void setCompetitorParams(const ForagingParams& foraging, const ReproductionParams& reproduction) {
+        competitorForagingParams_ = foraging;
+        competitorReproParams_ = reproduction;
+    }
+
     entt::registry& registry() { return registry_; }
     const entt::registry& registry() const { return registry_; }
 
@@ -104,6 +112,8 @@ private:
     VegetationParams vegParams_;
     ForagingParams foragingParams_;
     ReproductionParams reproParams_;
+    ForagingParams competitorForagingParams_;
+    ReproductionParams competitorReproParams_;
     GeneticsParams geneticsParams_;
     MigrationParams migrationParams_;
     DiseaseParams diseaseParams_;

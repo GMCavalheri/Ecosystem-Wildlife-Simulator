@@ -15,9 +15,14 @@ void MetricsRecorder::snapshot(const entt::registry& registry, const Grid& grid,
     double speedTotal = 0.0;
     double predatorEnergyTotal = 0.0;
     if (auto prey = preyGroup(registry)) {
-        for (auto [entity, position, energy, traits, health] : prey.each()) {
-            ++snap.preyCount;
-            speedTotal += traits.speed;
+        for (auto [entity, position, energy, traits, health, species] : prey.each()) {
+            if (species.id == kCompetitorSpeciesId) {
+                ++snap.competitorCount;
+            } else {
+                ++snap.preyCount;
+                speedTotal += traits.speed;
+            }
+            // Disease counts cover every herbivore.
             if (health.infected) {
                 ++snap.infectedPreyCount;
             } else if (health.immune) {
@@ -52,11 +57,12 @@ void MetricsRecorder::snapshot(const entt::registry& registry, const Grid& grid,
 void MetricsRecorder::writeCsv(const std::string& path) const {
     std::ofstream out(path);
     out << "time,prey,predator,avg_vegetation,avg_prey_speed,avg_predator_energy,"
-           "infected_prey,immune_prey\n";
+           "infected_prey,immune_prey,competitor\n";
     for (const auto& snap : history_) {
         out << snap.time << ',' << snap.preyCount << ',' << snap.predatorCount << ','
             << snap.avgVegetation << ',' << snap.avgPreySpeed << ',' << snap.avgPredatorEnergy
-            << ',' << snap.infectedPreyCount << ',' << snap.immunePreyCount << '\n';
+            << ',' << snap.infectedPreyCount << ',' << snap.immunePreyCount << ','
+            << snap.competitorCount << '\n';
     }
 }
 

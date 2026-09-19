@@ -16,6 +16,8 @@ Simulation::Simulation(int gridWidth, int gridHeight, PredatorParams predatorPar
       vegParams_(vegParams),
       foragingParams_(foragingParams),
       reproParams_(reproParams),
+      competitorForagingParams_(foragingParams),
+      competitorReproParams_(reproParams),
       geneticsParams_(geneticsParams),
       migrationParams_(migrationParams),
       diseaseParams_(diseaseParams) {}
@@ -28,7 +30,7 @@ void Simulation::seedPopulation(SpeciesId species, std::size_t count) {
         auto entity = registry_.create();
         registry_.emplace<Species>(entity, species);
 
-        if (species == kPreySpeciesId) {
+        if (species == kPreySpeciesId || species == kCompetitorSpeciesId) {
             registry_.emplace<Position>(entity, xDist(rng_), yDist(rng_));
             registry_.emplace<Energy>(entity, kInitialPreyEnergy, 100.0f);
             registry_.emplace<GeneticTraits>(entity, 1.0f, 1.0f, 1.0f);
@@ -72,12 +74,12 @@ void Simulation::tick(float dt) {
 
     stage(timings_.environment,
           [&] { environmentSystem_.update(grid_, dt, simulationTime_, vegParams_, pool_.get()); });
-    stage(timings_.foraging, [&] { foragingSystem_.update(registry_, grid_, dt, foragingParams_); });
+    stage(timings_.foraging, [&] { foragingSystem_.update(registry_, grid_, dt, foragingParams_, competitorForagingParams_); });
     stage(timings_.predation,
           [&] { predationSystem_.update(registry_, rng_, dt, predatorParams_); });
     stage(timings_.reproduction, [&] {
-        reproductionSystem_.update(registry_, rng_, dt, reproParams_, geneticsParams_,
-                                   predatorParams_);
+        reproductionSystem_.update(registry_, rng_, dt, reproParams_, competitorReproParams_,
+                                   geneticsParams_, predatorParams_);
     });
     stage(timings_.disease, [&] { diseaseSystem_.update(registry_, grid_, rng_, dt, diseaseParams_); });
     stage(timings_.migration,

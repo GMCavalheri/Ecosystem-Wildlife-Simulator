@@ -141,11 +141,13 @@ void Viewer::drawAgents() const {
     const float radius = cellPixelSize_ * 0.3f;
 
     for (auto entity : view) {
-        if (view.get<const Species>(entity).id != kPreySpeciesId) {
+        const SpeciesId speciesId = view.get<const Species>(entity).id;
+        if (speciesId != kPreySpeciesId && speciesId != kCompetitorSpeciesId) {
             continue;
         }
         const auto& position = view.get<const Position>(entity);
-        Color color = susceptibleColor;
+        // Phase 8: the competitor herbivore is drawn amber when healthy.
+        Color color = speciesId == kCompetitorSpeciesId ? Color{255, 190, 60, 235} : susceptibleColor;
         if (const auto* health = registry.try_get<const Health>(entity)) {
             if (health->infected) {
                 color = infectedColor;

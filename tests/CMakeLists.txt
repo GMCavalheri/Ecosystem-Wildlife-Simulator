@@ -13,6 +13,7 @@ add_executable(ecosystem_tests
     test_parallel.cpp
     test_biomes.cpp
     test_seasonal_migration.cpp
+    test_competition.cpp
 )
 
 target_link_libraries(ecosystem_tests PRIVATE ecosystem_core Catch2::Catch2WithMain)

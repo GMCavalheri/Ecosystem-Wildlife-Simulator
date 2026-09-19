@@ -17,7 +17,8 @@ class MetricsRecorder {
 public:
     struct Snapshot {
         float time = 0.0f;
-        std::size_t preyCount = 0;
+        std::size_t preyCount = 0;       // the original prey species only
+        std::size_t competitorCount = 0; // Phase 8's second herbivore
         std::size_t predatorCount = 0;
         float avgVegetation = 0.0f;
         float avgPreySpeed = 0.0f;
@@ -31,7 +32,7 @@ public:
     const std::vector<Snapshot>& history() const { return history_; }
 
     // Writes time,prey,predator,avg_vegetation,avg_prey_speed,avg_predator_energy,
-    // infected_prey,immune_prey rows for external plotting/validation.
+    // infected_prey,immune_prey,competitor rows for external plotting/validation.
     void writeCsv(const std::string& path) const;
 
 private:

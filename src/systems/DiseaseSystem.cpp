@@ -16,7 +16,7 @@ void DiseaseSystem::update(entt::registry& registry, const Grid& grid, std::mt19
     // Pass 1: how many infected prey does each cell hold?
     infectedPerCell_.assign(static_cast<std::size_t>(width) * grid.height(), 0);
     std::size_t totalInfected = 0;
-    for (auto [entity, position, energy, traits, health] : prey.each()) {
+    for (auto [entity, position, energy, traits, health, species] : prey.each()) {
         if (!health.infected) {
             continue;
         }
@@ -42,7 +42,7 @@ void DiseaseSystem::update(entt::registry& registry, const Grid& grid, std::mt19
     // Pass 2: each prey is visited exactly once. Susceptibles are exposed to the
     // infected count their cell had at the start of the tick (so a newly infected prey
     // doesn't also progress in the same tick); infected prey progress.
-    for (auto [entity, position, energy, traits, health] : prey.each()) {
+    for (auto [entity, position, energy, traits, health, species] : prey.each()) {
         if (health.infected) {
             health.infectionTimer += dt;
             if (leaves(rng)) {

@@ -9,9 +9,12 @@
 namespace eco {
 
 void ForagingSystem::update(entt::registry& registry, Grid& grid, float dt,
-                             const ForagingParams& params) {
+                             const ForagingParams& preyParams,
+                             const ForagingParams& competitorParams) {
     // Prey only (see PreyGroup.h): a linear walk over contiguous component arrays.
-    for (auto [entity, position, energy, traits, health] : preyGroup(registry).each()) {
+    for (auto [entity, position, energy, traits, health, species] : preyGroup(registry).each()) {
+        const ForagingParams& params =
+            species.id == kCompetitorSpeciesId ? competitorParams : preyParams;
         Cell& cell = grid.at(position.cellX, position.cellY);
 
         const float wanted = params.maxIntakeRate * dt;

@@ -62,7 +62,7 @@ void MigrationSystem::update(entt::registry& registry, const Grid& grid, std::mt
             if (!attempt(chunkRng)) {
                 continue;
             }
-            auto [entity, position, energy, traits, health] = *it;
+            auto [entity, position, energy, traits, health, species] = *it;
 
             const float currentVegetation =
                 grid.at(position.cellX, position.cellY).vegetationDensity;

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Plot population history CSV from ecosystem_sim: time,prey,predator,
-avg_vegetation,avg_prey_speed,avg_predator_energy,infected_prey,immune_prey.
+avg_vegetation,avg_prey_speed,avg_predator_energy,infected_prey,immune_prey,competitor.
 
 Usage: python3 tools/plot_population.py [population_history.csv] [output.png]
 """
@@ -15,7 +15,7 @@ def main() -> None:
 
     time, prey, predator = [], [], []
     vegetation, speed, predator_energy = [], [], []
-    infected, immune = [], []
+    infected, immune, competitor = [], [], []
     with open(csv_path, newline="") as f:
         reader = csv.DictReader(f)
         fields = reader.fieldnames or []
@@ -23,6 +23,7 @@ def main() -> None:
         has_speed = "avg_prey_speed" in fields
         has_predator_energy = "avg_predator_energy" in fields
         has_disease = "infected_prey" in fields
+        has_competitor = "competitor" in fields
         for row in reader:
             time.append(float(row["time"]))
             prey.append(int(row["prey"]))
@@ -36,6 +37,8 @@ def main() -> None:
             if has_disease:
                 infected.append(int(row["infected_prey"]))
                 immune.append(int(row["immune_prey"]))
+            if has_competitor:
+                competitor.append(int(row["competitor"]))
 
     import matplotlib.pyplot as plt
 
@@ -52,6 +55,8 @@ def main() -> None:
 
     ax_time.plot(time, prey, label="Prey", color="tab:green")
     ax_time.plot(time, predator, label="Predator", color="tab:red")
+    if any(competitor):
+        ax_time.plot(time, competitor, label="Competitor", color="tab:orange")
     ax_time.set_xlabel("Simulated time")
     ax_time.set_ylabel("Population")
     ax_time.set_title("Population vs. time")
