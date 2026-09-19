@@ -14,6 +14,7 @@ add_library(ecosystem_core
     src/core/WeightedSampling.cpp
     src/core/ThreadPool.cpp
     src/environment/Grid.cpp
+    src/environment/Biomes.cpp
     src/systems/EnvironmentSystem.cpp
     src/systems/ForagingSystem.cpp
     src/systems/PredationSystem.cpp

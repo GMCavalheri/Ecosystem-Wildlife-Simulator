@@ -25,6 +25,10 @@ struct VegetationParams {
     float seasonalPeriod = 40.0f;       // simulated time units per full seasonal cycle
     float optimalTemperature = 20.0f;   // temperature at which regrowth is fastest
     float temperatureTolerance = 15.0f; // sigma of the suitability Gaussian
+    // Phase 8: degrees C from the top row to the bottom row (bottom is warmer when
+    // positive), so the season shifts the band of fastest regrowth up and down the grid
+    // -- the substrate for emergent seasonal migration. 0 = uniform climate.
+    float latitudeGradient = 0.0f;
 };
 
 // Phase 2: herbivores eat vegetation from their own cell, convert it into Energy, and

@@ -11,6 +11,8 @@ add_executable(ecosystem_tests
     test_disease.cpp
     test_weighted_sampling.cpp
     test_parallel.cpp
+    test_biomes.cpp
+    test_seasonal_migration.cpp
 )
 
 target_link_libraries(ecosystem_tests PRIVATE ecosystem_core Catch2::Catch2WithMain)
