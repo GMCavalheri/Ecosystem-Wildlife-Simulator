@@ -1,0 +1,72 @@
+{
+  "biomes": {
+    "enabled": false,
+    "latticeSpacing": 12.0,
+    "seed": 1
+  },
+  "competitorForaging": {
+    "energyPerVegetation": 400.0,
+    "maxIntakeRate": 0.12,
+    "metabolicRate": 10.0
+  },
+  "competitorReproduction": {
+    "attemptRate": 0.3,
+    "energyThreshold": 70.0,
+    "offspringEnergy": 40.0,
+    "parentEnergyCost": 55.0
+  },
+  "disease": {
+    "diseaseDeathRate": 0.05,
+    "recoveryRate": 0.3,
+    "transmissionRate": 0.15
+  },
+  "foraging": {
+    "energyPerVegetation": 400.0,
+    "maxIntakeRate": 0.12,
+    "metabolicRate": 10.0
+  },
+  "genetics": {
+    "fertilityMutationStdDev": 0.05,
+    "maxTraitValue": 3.0,
+    "minTraitValue": 0.1,
+    "sizeMutationStdDev": 0.05,
+    "speedMutationStdDev": 0.05
+  },
+  "gridHeight": 64,
+  "gridWidth": 64,
+  "initial": {
+    "competitors": 0,
+    "infected": 0,
+    "predators": 10,
+    "prey": 280
+  },
+  "migration": {
+    "minVegetationAdvantage": 0.05,
+    "moveAttemptRate": 2.0
+  },
+  "predator": {
+    "energyPerKill": 200.0,
+    "metabolicRate": 15.0,
+    "offspringEnergy": 40.0,
+    "parentEnergyCost": 55.0,
+    "predationRate": 0.002,
+    "reproductionAttemptRate": 0.2,
+    "reproductionThreshold": 70.0
+  },
+  "reproduction": {
+    "attemptRate": 0.3,
+    "energyThreshold": 70.0,
+    "offspringEnergy": 40.0,
+    "parentEnergyCost": 55.0
+  },
+  "seed": 1234,
+  "vegetation": {
+    "baseTemperature": 20.0,
+    "latitudeGradient": 0.0,
+    "optimalTemperature": 20.0,
+    "regrowthRate": 0.4,
+    "seasonalAmplitude": 10.0,
+    "seasonalPeriod": 40.0,
+    "temperatureTolerance": 15.0
+  }
+}

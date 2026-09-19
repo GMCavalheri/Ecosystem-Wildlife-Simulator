@@ -1,0 +1,10 @@
+{
+  "gridWidth": 48,
+  "gridHeight": 48,
+  "seed": 7,
+  "vegetation": { "latitudeGradient": 30.0, "seasonalAmplitude": 10.0, "seasonalPeriod": 40.0, "temperatureTolerance": 6.0 },
+  "reproduction": { "attemptRate": 0.0 },
+  "predator": { "predationRate": 0.0 },
+  "migration": { "minVegetationAdvantage": 0.02 },
+  "initial": { "prey": 900, "predators": 0 }
+}

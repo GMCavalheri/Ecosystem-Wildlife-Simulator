@@ -4,19 +4,14 @@
   "dependencies": [
     "entt",
     "spdlog",
-    "catch2"
+    "catch2",
+    "nlohmann-json"
   ],
   "features": {
     "render": {
       "description": "Optional top-down grid renderer and live HUD (Phase 6). raylib only -- vcpkg has no raylib/Dear ImGui bridge (rlImGui), and hand-writing that backend glue was judged too high-risk to debug blind in a headless environment; live graphs and tunable parameters are drawn with raylib's own primitives and keyboard input instead.",
       "dependencies": [
         "raylib"
-      ]
-    },
-    "persistence": {
-      "description": "Save/load and JSON-driven config for species and world parameters (Phase 8)",
-      "dependencies": [
-        "nlohmann-json"
       ]
     }
   }

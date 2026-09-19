@@ -14,9 +14,11 @@ add_executable(ecosystem_tests
     test_biomes.cpp
     test_seasonal_migration.cpp
     test_competition.cpp
+    test_persistence.cpp
 )
 
 target_link_libraries(ecosystem_tests PRIVATE ecosystem_core Catch2::Catch2WithMain)
+target_compile_definitions(ecosystem_tests PRIVATE ECOSYSTEM_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
 
 include(CTest)
 include(Catch)

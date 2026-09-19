@@ -1,6 +1,9 @@
 #include "core/Simulation.h"
 
 #include <algorithm>
+#include <sstream>
+
+#include "components/PreyGroup.h"
 #include <vector>
 
 namespace eco {
@@ -20,7 +23,46 @@ Simulation::Simulation(int gridWidth, int gridHeight, PredatorParams predatorPar
       competitorReproParams_(reproParams),
       geneticsParams_(geneticsParams),
       migrationParams_(migrationParams),
-      diseaseParams_(diseaseParams) {}
+      diseaseParams_(diseaseParams) {
+    initialSeed_ = rngSeed;
+    // Create the prey group up front so it always exists (a lazily-created group would
+    // make even a const save operation depend on -- or trigger -- its creation).
+    (void)preyGroup(registry_);
+}
+
+Simulation::Simulation(const SimulationConfig& c)
+    : Simulation(c.gridWidth, c.gridHeight, c.predator, c.vegetation, c.foraging,
+                 c.reproduction, c.genetics, c.migration, c.disease, c.seed) {
+    setCompetitorParams(c.competitorForaging, c.competitorReproduction);
+}
+
+SimulationConfig Simulation::config() const {
+    SimulationConfig c;
+    c.gridWidth = grid_.width();
+    c.gridHeight = grid_.height();
+    c.seed = initialSeed_;
+    c.predator = predatorParams_;
+    c.vegetation = vegParams_;
+    c.foraging = foragingParams_;
+    c.reproduction = reproParams_;
+    c.competitorForaging = competitorForagingParams_;
+    c.competitorReproduction = competitorReproParams_;
+    c.genetics = geneticsParams_;
+    c.migration = migrationParams_;
+    c.disease = diseaseParams_;
+    return c;
+}
+
+std::string Simulation::rngState() const {
+    std::ostringstream out;
+    out << rng_;
+    return out.str();
+}
+
+void Simulation::restoreRngState(const std::string& state) {
+    std::istringstream in(state);
+    in >> rng_;
+}
 
 void Simulation::seedPopulation(SpeciesId species, std::size_t count) {
     std::uniform_int_distribution<int> xDist(0, grid_.width() - 1);

@@ -4,12 +4,14 @@
 #include <cstddef>
 #include <memory>
 #include <random>
+#include <string>
 
 #include <entt/entt.hpp>
 
 #include "components/Components.h"
 #include "core/EcosystemParams.h"
 #include "core/MetricsRecorder.h"
+#include "core/SimulationConfig.h"
 #include "core/ThreadPool.h"
 #include "environment/Grid.h"
 #include "systems/DiseaseSystem.h"
@@ -50,6 +52,15 @@ public:
                MigrationParams migrationParams = {}, DiseaseParams diseaseParams = {},
                unsigned rngSeed = 1234u);
 
+    // Phase 8: builds the simulation a SimulationConfig describes (world size, seed and
+    // every tunable). Populations and biomes are applied by buildSimulation()
+    // (core/Persistence.h); this only sets up the empty world.
+    explicit Simulation(const SimulationConfig& config);
+
+    // The parameters this simulation is currently running with (including any changed
+    // live through the mutable accessors below).
+    SimulationConfig config() const;
+
     void tick(float dt);
 
     // Creates `count` entities of the given species. Prey get a random Position on the
@@ -72,6 +83,13 @@ public:
         competitorForagingParams_ = foraging;
         competitorReproParams_ = reproduction;
     }
+
+    // --- Persistence support (core/Persistence.h) -------------------------------------
+    // The RNG's full state as text (std::mt19937 stream form), and its inverse; plus
+    // restoring the clock. A resumed run is only bit-identical if all three are restored.
+    std::string rngState() const;
+    void restoreRngState(const std::string& state);
+    void restoreSimulationTime(float time) { simulationTime_ = time; }
 
     entt::registry& registry() { return registry_; }
     const entt::registry& registry() const { return registry_; }
@@ -106,6 +124,7 @@ private:
     Grid grid_;
     float simulationTime_ = 0.0f;
     SystemTimings timings_;
+    unsigned initialSeed_ = 1234u;
     std::unique_ptr<ThreadPool> pool_; // null => serial
     std::mt19937 rng_;
     PredatorParams predatorParams_;

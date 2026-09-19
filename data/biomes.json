@@ -1,0 +1,9 @@
+{
+  "gridWidth": 48,
+  "gridHeight": 48,
+  "seed": 11,
+  "predator": { "predationRate": 0.0 },
+  "migration": { "moveAttemptRate": 0.0 },
+  "initial": { "prey": 1500, "predators": 0 },
+  "biomes": { "enabled": true, "seed": 4, "latticeSpacing": 12.0 }
+}

@@ -1,0 +1,5 @@
+{
+  "gridWidth": 16,
+  "gridHeight": 16,
+  "initial": { "prey": 280, "predators": 10, "infected": 20 }
+}

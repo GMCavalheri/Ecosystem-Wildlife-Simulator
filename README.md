@@ -27,7 +27,7 @@ planned series of simulation games (farm, industry, crime, ...).
 | Rendering + live HUD/graphs | [raylib](https://www.raylib.com/) *(render feature)* |
 | Logging | [spdlog](https://github.com/gabime/spdlog) |
 | Testing | [Catch2](https://github.com/catchorg/Catch2) |
-| Serialization | [nlohmann/json](https://github.com/nlohmann/json) *(persistence feature)* |
+| Config + save/load | [nlohmann/json](https://github.com/nlohmann/json) |
 
 ## Building
 
@@ -40,8 +40,7 @@ cmake --build --preset default
 ctest --preset default
 ```
 
-Optional feature sets (rendering, persistence) can be enabled with vcpkg manifest
-features once those phases are implemented, e.g.:
+The renderer is an optional vcpkg feature:
 
 ```bash
 cmake --preset default -DVCPKG_MANIFEST_FEATURES="render"
@@ -50,14 +49,32 @@ cmake --preset default -DVCPKG_MANIFEST_FEATURES="render"
 ## Architecture
 
 - `src/components/` — plain-data ECS components ([Components.h](src/components/Components.h)): `Position`, `Species`, `Energy`, `Age`, `GeneticTraits`, `Health`, `Reproductive`.
-- `src/environment/` — the terrain grid ([Grid.h](src/environment/Grid.h)), a flat `std::vector<Cell>` kept outside the ECS for cache locality.
+- `src/environment/` — the terrain grid ([Grid.h](src/environment/Grid.h)), a flat `std::vector<Cell>` kept outside the ECS for cache locality, plus [`generateBiomes`](src/environment/Biomes.h) (smooth seeded noise split by quantile into Desert/Plains/Forest/Wetland).
 - `src/systems/` — one class per system, run in a fixed order each tick: `EnvironmentSystem` -> `ForagingSystem` -> `PredationSystem` -> `ReproductionSystem` -> `DiseaseSystem` -> `MigrationSystem` -> `MortalitySystem`.
 - `src/core/` — [`Simulation`](src/core/Simulation.h) owns the `entt::registry` and `Grid` and drives the tick loop; `MetricsRecorder` snapshots state for validation.
 - `src/render/` — optional [`Viewer`](src/render/Viewer.h): a raylib top-down grid renderer with a live HUD, population graph, and keyboard-tunable parameters, only linked into `ecosystem_viewer` when the `render` feature is enabled. No Dear ImGui/ImPlot -- vcpkg has no raylib/ImGui bridge, so the HUD/graphs/controls are drawn with raylib's own primitives and keyboard input instead of a GUI panel.
 - `src/bench/` — `ecosystem_bench`, the Phase 7 profiling harness (per-system timings, thread scaling, multi-replicate sweeps).
 - `tests/` — Catch2 unit tests, especially for the math-heavy growth/predation logic.
-- `data/` — config JSON (species params, tunables), added starting Phase 8.
+- `data/` — scenario files (`ecosystem_sim --config data/competition.json`); see [Configuration and saves](#configuration-and-saves).
 - `tools/` — CSV-to-plot scripts for validating population dynamics (Phase 1).
+
+## Configuration and saves
+
+Every tunable lives in one `SimulationConfig` that can be loaded from JSON. Files are
+*partial*: leave a key out and it keeps its default (`ecosystem_sim --dump-config` prints
+them all), and a misspelled key is an error rather than silently ignored.
+
+```bash
+ecosystem_sim --config data/competition.json --ticks 900 --save run.json
+ecosystem_sim --load run.json --ticks 900          # continues bit-identically
+```
+
+A save captures the parameters, clock, the RNG's full state, the terrain, and every
+animal in the order the systems visit them, so a resumed run is indistinguishable from
+one that never stopped (`tests/test_persistence.cpp` requires exact equality). Shipped
+scenarios: `crowded_outbreak` (Phase 4), `seasonal_herd` (emergent seasonal migration),
+`competition` (competitive exclusion), `biomes`. In the viewer: `K` saves, `L` loads,
+`G` toggles the climate gradient, `C` adds competitors.
 
 ## Performance
 
@@ -84,7 +101,7 @@ What the profile found, and what fixed it:
 3. **Cache misses, not arithmetic, dominated the per-prey scans.** EnTT views walk one
    component pool and do a sparse lookup into the others, and the pools drift out of
    order as animals are born and die. An *owning group* (`components/PreyGroup.h`) keeps
-   Position/Energy/GeneticTraits/Health physically aligned; foraging got 3.2x faster
+   Position/Energy/GeneticTraits/Health/Species physically aligned; foraging got 3.2x faster
    from that change alone. This is the "data-oriented" design pillar, measured.
 4. **Threads (`core/ThreadPool.h`)** run the systems that are safe to parallelize:
    environment (each cell is independent) and migration (reads the grid, writes only its
@@ -112,7 +129,7 @@ into flat arrays, and predation is mean-field -- so there was no O(n^2) to fix.
 - **Phase 5 -- Migration**: gradient-following movement; watch for clustering/resource collapse.
 - **Phase 6 -- Visualization**: raylib grid renderer + live population graph, drawn with raylib's own primitives; keyboard-tunable parameters (vegetation regrowth, disease transmission, migration rate) and a manual outbreak trigger. Build with `-DVCPKG_MANIFEST_FEATURES=render` and run `ecosystem_viewer`.
 - **Phase 7 -- Performance**: profiled at 10k-250k agents (`ecosystem_bench`), then optimized what the profile pointed at -- see [Performance](#performance).
-- **Phase 8 -- Expansion**: more species, seasonal migration, multiple biomes, save/load via JSON.
+- **Phase 8 -- Expansion**: multiple biomes, seasonal migration that emerges from a latitude climate gradient (nothing scripted), a second competing herbivore species (competitive exclusion), and JSON config plus exact save/load -- see [Configuration and saves](#configuration-and-saves).
 
 ## Open Decisions
 
@@ -125,4 +142,4 @@ Tracked here until resolved in an implementation pass:
 - **Grid size / target population scale**, which determines whether naive O(n^2)
   neighbor checks are acceptable early on or spatial partitioning is needed from
   day one.
-- **Seasons/weather**: deterministic cycles vs. a light stochastic process.
+- **Seasons/weather**: resolved -- deterministic sinusoidal cycle (Phase 2); it drives seasonal migration through the latitude gradient (Phase 8).

@@ -7,11 +7,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(EnTT CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 add_library(ecosystem_core
     src/core/Simulation.cpp
     src/core/MetricsRecorder.cpp
     src/core/WeightedSampling.cpp
+    src/core/Persistence.cpp
     src/core/ThreadPool.cpp
     src/environment/Grid.cpp
     src/environment/Biomes.cpp
@@ -27,7 +29,7 @@ add_library(ecosystem_core
 target_include_directories(ecosystem_core PUBLIC src)
 target_compile_features(ecosystem_core PUBLIC cxx_std_20)
 find_package(Threads REQUIRED)
-target_link_libraries(ecosystem_core PUBLIC EnTT::EnTT spdlog::spdlog Threads::Threads)
+target_link_libraries(ecosystem_core PUBLIC EnTT::EnTT spdlog::spdlog nlohmann_json::nlohmann_json Threads::Threads)
 
 add_executable(ecosystem_sim src/main.cpp)
 target_link_libraries(ecosystem_sim PRIVATE ecosystem_core)

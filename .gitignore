@@ -30,3 +30,6 @@ Thumbs.db
 # Simulation output (Phase 1 CSV logs, etc.)
 *.csv
 !tools/*.csv
+
+# Saved by the viewer (K key)
+viewer_save.json

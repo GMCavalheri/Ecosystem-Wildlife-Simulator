@@ -2,10 +2,12 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <filesystem>
 
 #include <raylib.h>
 
 #include "components/Components.h"
+#include "core/Persistence.h"
 #include "environment/Grid.h"
 
 namespace eco {
@@ -16,10 +18,10 @@ constexpr int kGridMarginX = 10;
 constexpr int kGridMarginY = 10;
 constexpr int kPanelX = 510;
 constexpr int kPanelWidth = 330;
-// HUD text in drawHud() below is 14 lines (22px each) plus 3 section gaps (8px each),
+// HUD text in drawHud() below is 15 lines (22px each) plus 3 section gaps (8px each),
 // starting at kGridMarginY, then a 20px-tall legend row -- kGraphY must clear all of
 // that or the opaque graph panel drawn after it will paint over the tail of the HUD.
-constexpr int kGraphY = kGridMarginY + 14 * 22 + 3 * 8 + 20 + 10;
+constexpr int kGraphY = kGridMarginY + 15 * 22 + 3 * 8 + 20 + 10;
 constexpr int kGraphHeight = 260;
 
 Color lerpColor(Color a, Color b, float t) {
@@ -37,9 +39,16 @@ Color lerpColor(Color a, Color b, float t) {
 Viewer::Viewer() : sim_(gridWidth_, gridHeight_) { reset(); }
 
 void Viewer::reset() {
-    sim_ = Simulation(gridWidth_, gridHeight_);
-    sim_.seedPopulation(kPreySpeciesId, 280);
-    sim_.seedPopulation(kPredatorSpeciesId, 10);
+    // Phase 8: a biome map from the start (deserts read as brown, wetlands as lush green,
+    // because cells are colored by vegetation density and each biome supports a
+    // different amount of it).
+    SimulationConfig config;
+    config.gridWidth = gridWidth_;
+    config.gridHeight = gridHeight_;
+    config.initial = {280, 0, 10, 0};
+    config.biomes.enabled = true;
+    config.biomes.seed = 3;
+    sim_ = buildSimulation(config);
     tickAccumulator_ = 0.0f;
 }
 
@@ -115,6 +124,22 @@ void Viewer::handleInput() {
     if (IsKeyPressed(KEY_R)) {
         reset();
     }
+    if (IsKeyPressed(KEY_G)) {
+        // Toggle a latitude climate gradient: the season then slides the band of fastest
+        // regrowth up and down the grid, and herds follow it.
+        auto& gradient = sim_.vegetationParams().latitudeGradient;
+        gradient = gradient == 0.0f ? 30.0f : 0.0f;
+    }
+    if (IsKeyPressed(KEY_C)) {
+        sim_.seedPopulation(kCompetitorSpeciesId, 100);
+    }
+    if (IsKeyPressed(KEY_K)) {
+        saveStateToFile(sim_, "viewer_save.json");
+    }
+    if (IsKeyPressed(KEY_L) && std::filesystem::exists("viewer_save.json")) {
+        sim_ = loadStateFromFile("viewer_save.json");
+        tickAccumulator_ = 0.0f;
+    }
 }
 
 void Viewer::drawGrid() const {
@@ -166,7 +191,8 @@ void Viewer::drawHud() const {
     // history -- that history only advances inside sim_.tick(), so while paused (e.g.
     // right after pressing 'I' to seed an outbreak) it would show stale counts even
     // though the grid rendering above already reflects the live state correctly.
-    std::size_t preyCount = 0, predatorCount = 0, infectedCount = 0, immuneCount = 0;
+    std::size_t preyCount = 0, competitorCount = 0, predatorCount = 0, infectedCount = 0,
+                immuneCount = 0;
     double speedTotal = 0.0;
     const auto& registry = sim_.registry();
     for (auto entity : registry.view<const Species>()) {
@@ -176,6 +202,15 @@ void Viewer::drawHud() const {
             if (const auto* traits = registry.try_get<const GeneticTraits>(entity)) {
                 speedTotal += traits->speed;
             }
+            if (const auto* health = registry.try_get<const Health>(entity)) {
+                if (health->infected) {
+                    ++infectedCount;
+                } else if (health->immune) {
+                    ++immuneCount;
+                }
+            }
+        } else if (id == kCompetitorSpeciesId) {
+            ++competitorCount;
             if (const auto* health = registry.try_get<const Health>(entity)) {
                 if (health->infected) {
                     ++infectedCount;
@@ -211,7 +246,7 @@ void Viewer::drawHud() const {
     draw("t = %.2f  %s", sim_.simulationTime(), paused_ ? "[PAUSED]" : "");
     draw("ticks/sec: %.1f", ticksPerSecond_);
     y += 8;
-    draw("Prey:      %5zu", preyCount);
+    draw("Prey:%5zu Comp:%5zu", preyCount, competitorCount);
     draw("Predator:  %5zu", predatorCount);
     draw("Infected:  %5zu", infectedCount);
     draw("Immune:    %5zu", immuneCount);
@@ -224,7 +259,8 @@ void Viewer::drawHud() const {
     y += 8;
     draw("[I] seed outbreak (20 prey)");
     draw("[SPACE] pause  [R] reset");
-    draw("[UP/DOWN] sim speed");
+    draw("[UP/DN] speed  [G] climate");
+    draw("[C] +competitors [K/L] save/load");
 
     DrawText("Susceptible", kPanelX, y + 6, 14, Color{240, 240, 240, 230});
     DrawCircle(kPanelX + 100, y + 13, 5, Color{240, 240, 240, 230});

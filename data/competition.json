@@ -1,0 +1,8 @@
+{
+  "gridWidth": 32,
+  "gridHeight": 32,
+  "seed": 3,
+  "predator": { "predationRate": 0.0 },
+  "competitorForaging": { "metabolicRate": 9.0 },
+  "initial": { "prey": 75, "competitors": 75, "predators": 0 }
+}
